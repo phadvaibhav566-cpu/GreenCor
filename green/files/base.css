@@ -1,0 +1,13 @@
+  :root{
+    --bg:#080D18; --panel:#0F1830; --panel-2:#0B1326; --border:#1E2C4A;
+    --text:#E9EEF9; --muted:#7C8AAE; --muted-2:#4F5D7E;
+    --red:#EF4B54; --red-dim:#4A2029; --amber:#F5A524; --amber-dim:#4A3618;
+    --green:#2FD9A7; --green-dim:#123A32; --blue:#5B8CFF; --blue-dim:#132244;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow:hidden;}
+  button{font-family:inherit;}
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+

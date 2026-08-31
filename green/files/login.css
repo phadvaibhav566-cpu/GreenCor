@@ -1,0 +1,44 @@
+  /* ============ LOGIN SCREEN ============ */
+  .login-wrap{
+    height:100vh;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 20% 20%,#111c3a,#080D18 60%);
+  }
+  .login-card{
+    width:380px;background:var(--panel);border:1px solid var(--border);
+    border-radius:14px;padding:28px 26px;box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .login-card .mark{
+    width:44px;height:44px;border-radius:10px;margin:0 auto 14px;
+    background:radial-gradient(circle at 30% 30%,var(--red),#8E1F27);
+    display:flex;align-items:center;justify-content:center;font-size:22px;
+    box-shadow:0 0 20px rgba(239,75,84,0.45);
+  }
+  .login-card h1{font-family:'Space Grotesk',sans-serif;font-size:17px;text-align:center;margin:0 0 2px;}
+  .login-card .sub{text-align:center;font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:20px;}
+  .demo-badge{
+    display:block;margin:0 auto 18px;width:fit-content;font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;color:var(--amber);border:1px solid var(--amber-dim);background:var(--amber-dim);
+    padding:4px 10px;border-radius:6px;letter-spacing:.5px;
+  }
+  .login-card label{display:block;font-size:11px;color:var(--muted);margin:12px 0 5px;}
+  .login-card input{
+    width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);
+    border-radius:7px;padding:10px 11px;font-size:13.5px;outline:none;font-family:'JetBrains Mono',monospace;
+  }
+  .login-card input:focus{border-color:var(--blue);}
+  .login-btn{
+    width:100%;margin-top:18px;padding:12px;border:none;border-radius:8px;
+    background:linear-gradient(180deg,#F0525C,#C22732);color:#fff;font-family:'Space Grotesk',sans-serif;
+    font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:0 4px 14px rgba(194,39,50,0.35);
+  }
+  .login-error{
+    margin-top:12px;font-size:12px;color:var(--red);background:var(--red-dim);
+    border:1px solid #6a2530;padding:8px 10px;border-radius:7px;display:none;
+  }
+  .login-hint{
+    margin-top:18px;border-top:1px solid var(--border);padding-top:14px;font-size:11px;color:var(--muted-2);
+  }
+  .login-hint b{color:var(--muted);}
+  .login-hint .creds{font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.9;margin-top:6px;}
+  .login-hint .creds span{color:var(--blue);}
+
