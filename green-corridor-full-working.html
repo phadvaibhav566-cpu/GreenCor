@@ -1,0 +1,1662 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Emergency Vehicle Green Corridor Management System — Kolhapur</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#080D18; --panel:#0F1830; --panel-2:#0B1326; --border:#1E2C4A;
+    --text:#E9EEF9; --muted:#7C8AAE; --muted-2:#4F5D7E;
+    --red:#EF4B54; --red-dim:#4A2029; --amber:#F5A524; --amber-dim:#4A3618;
+    --green:#2FD9A7; --green-dim:#123A32; --blue:#5B8CFF; --blue-dim:#132244;
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;overflow:hidden;}
+  button{font-family:inherit;}
+  ::-webkit-scrollbar{width:6px;height:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+
+  /* ============ LOGIN SCREEN ============ */
+  .login-wrap{
+    height:100vh;display:flex;align-items:center;justify-content:center;
+    background:radial-gradient(circle at 20% 20%,#111c3a,#080D18 60%);
+  }
+  .login-card{
+    width:380px;background:var(--panel);border:1px solid var(--border);
+    border-radius:14px;padding:28px 26px;box-shadow:0 20px 60px rgba(0,0,0,0.5);
+  }
+  .login-card .mark{
+    width:44px;height:44px;border-radius:10px;margin:0 auto 14px;
+    background:radial-gradient(circle at 30% 30%,var(--red),#8E1F27);
+    display:flex;align-items:center;justify-content:center;font-size:22px;
+    box-shadow:0 0 20px rgba(239,75,84,0.45);
+  }
+  .login-card h1{font-family:'Space Grotesk',sans-serif;font-size:17px;text-align:center;margin:0 0 2px;}
+  .login-card .sub{text-align:center;font-size:11px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;margin-bottom:20px;}
+  .demo-badge{
+    display:block;margin:0 auto 18px;width:fit-content;font-family:'JetBrains Mono',monospace;
+    font-size:10.5px;color:var(--amber);border:1px solid var(--amber-dim);background:var(--amber-dim);
+    padding:4px 10px;border-radius:6px;letter-spacing:.5px;
+  }
+  .login-card label{display:block;font-size:11px;color:var(--muted);margin:12px 0 5px;}
+  .login-card input{
+    width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);
+    border-radius:7px;padding:10px 11px;font-size:13.5px;outline:none;font-family:'JetBrains Mono',monospace;
+  }
+  .login-card input:focus{border-color:var(--blue);}
+  .login-btn{
+    width:100%;margin-top:18px;padding:12px;border:none;border-radius:8px;
+    background:linear-gradient(180deg,#F0525C,#C22732);color:#fff;font-family:'Space Grotesk',sans-serif;
+    font-weight:700;font-size:13.5px;cursor:pointer;box-shadow:0 4px 14px rgba(194,39,50,0.35);
+  }
+  .login-error{
+    margin-top:12px;font-size:12px;color:var(--red);background:var(--red-dim);
+    border:1px solid #6a2530;padding:8px 10px;border-radius:7px;display:none;
+  }
+  .login-hint{
+    margin-top:18px;border-top:1px solid var(--border);padding-top:14px;font-size:11px;color:var(--muted-2);
+  }
+  .login-hint b{color:var(--muted);}
+  .login-hint .creds{font-family:'JetBrains Mono',monospace;font-size:10.5px;line-height:1.9;margin-top:6px;}
+  .login-hint .creds span{color:var(--blue);}
+
+  /* ============ APP SHELL ============ */
+  .app{display:none;height:100vh;flex-direction:column;}
+  .app.active{display:flex;}
+  .topbar{
+    height:54px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+    padding:0 18px;border-bottom:1px solid var(--border);background:linear-gradient(180deg,#0C1428,#0A1122);
+  }
+  .topbar .left{display:flex;align-items:center;gap:12px;}
+  .topbar .brand{display:flex;align-items:center;gap:9px;}
+  .topbar .brand .mark{
+    width:28px;height:28px;border-radius:7px;background:radial-gradient(circle at 30% 30%,var(--red),#8E1F27);
+    display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 0 14px rgba(239,75,84,0.45);
+  }
+  .topbar .brand h1{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;margin:0;line-height:1.1;}
+  .topbar .brand span{display:block;font-size:9.5px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;}
+  .status-row{display:flex;gap:8px;align-items:center;font-family:'JetBrains Mono',monospace;font-size:10px;}
+  .status-dot{display:flex;align-items:center;gap:4px;color:var(--muted);}
+  .status-dot i{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block;box-shadow:0 0 6px var(--green);}
+  .mode-badge{
+    font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--amber);border:1px solid var(--amber-dim);
+    background:var(--amber-dim);padding:4px 9px;border-radius:6px;letter-spacing:.5px;
+  }
+  .topbar .right{display:flex;align-items:center;gap:12px;}
+  .clock{font-family:'JetBrains Mono',monospace;font-size:12.5px;background:var(--panel-2);border:1px solid var(--border);padding:5px 10px;border-radius:6px;}
+  .role-chip{
+    display:flex;align-items:center;gap:8px;background:var(--panel-2);border:1px solid var(--border);
+    padding:5px 10px;border-radius:20px;font-size:11.5px;
+  }
+  .role-chip .rdot{width:7px;height:7px;border-radius:50%;background:var(--blue);}
+  .logout-btn{
+    background:var(--panel-2);border:1px solid var(--border);color:var(--muted);padding:6px 12px;
+    border-radius:6px;font-size:11.5px;cursor:pointer;
+  }
+  .logout-btn:hover{color:var(--red);border-color:var(--red-dim);}
+
+  .main-area{flex:1;overflow:hidden;position:relative;}
+  .dash{display:none;height:100%;}
+  .dash.active{display:flex;}
+
+  /* generic cards / layout helpers used by non-driver dashboards */
+  .scroll-page{flex:1;overflow-y:auto;padding:20px 26px;}
+  .grid{display:grid;gap:14px;}
+  .grid.cols-4{grid-template-columns:repeat(4,1fr);}
+  .grid.cols-3{grid-template-columns:repeat(3,1fr);}
+  .grid.cols-2{grid-template-columns:repeat(2,1fr);}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:16px;}
+  .card h3{font-family:'Space Grotesk',sans-serif;font-size:12px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);margin:0 0 12px;display:flex;align-items:center;justify-content:space-between;}
+  .stat{background:var(--panel-2);border:1px solid var(--border);border-radius:10px;padding:14px;}
+  .stat .val{font-family:'JetBrains Mono',monospace;font-size:22px;font-weight:700;}
+  .stat .lbl{font-size:10.5px;color:var(--muted);margin-top:3px;letter-spacing:.3px;text-transform:uppercase;}
+  .stat.red .val{color:var(--red);} .stat.green .val{color:var(--green);} .stat.amber .val{color:var(--amber);} .stat.blue .val{color:var(--blue);}
+
+  .badge{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:5px;letter-spacing:.3px;}
+  .badge.green{color:var(--green);background:var(--green-dim);border:1px solid #16493c;}
+  .badge.amber{color:var(--amber);background:var(--amber-dim);border:1px solid #5c421d;}
+  .badge.red{color:var(--red);background:var(--red-dim);border:1px solid #6a2530;}
+  .badge.blue{color:var(--blue);background:var(--blue-dim);border:1px solid #24345f;}
+  .badge.grey{color:var(--muted);background:var(--panel-2);border:1px solid var(--border);}
+
+  .btn{border:none;border-radius:7px;padding:9px 14px;font-size:12.5px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif;}
+  .btn:disabled{opacity:.4;cursor:not-allowed;}
+  .btn.primary{background:linear-gradient(180deg,#F0525C,#C22732);color:#fff;box-shadow:0 3px 10px rgba(194,39,50,0.3);}
+  .btn.green{background:linear-gradient(180deg,#35E0B0,#1FAE86);color:#04231b;box-shadow:0 3px 10px rgba(47,217,167,0.25);}
+  .btn.blue{background:linear-gradient(180deg,#6C97FF,#4670E0);color:#fff;box-shadow:0 3px 10px rgba(91,140,255,0.25);}
+  .btn.ghost{background:var(--panel-2);border:1px solid var(--border);color:var(--text);}
+  .btn.amber{background:linear-gradient(180deg,#FFC15C,#E39012);color:#3a2400;}
+  .btn.sm{padding:6px 10px;font-size:11px;}
+  .btn-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+
+  .empty{font-size:12px;color:var(--muted-2);text-align:center;padding:22px 8px;}
+  .kv{display:flex;justify-content:space-between;font-size:12px;padding:5px 0;border-bottom:1px solid var(--border);}
+  .kv:last-child{border-bottom:none;}
+  .kv .k{color:var(--muted);} .kv .v{font-family:'JetBrains Mono',monospace;font-weight:600;}
+
+  table{width:100%;border-collapse:collapse;font-size:12px;}
+  th{text-align:left;color:var(--muted);font-weight:600;font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;padding:8px 10px;border-bottom:1px solid var(--border);}
+  td{padding:9px 10px;border-bottom:1px solid var(--border);}
+  tr:hover td{background:var(--panel-2);}
+  input.search, select.filt{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:8px 10px;font-size:12px;outline:none;}
+  input.search:focus, select.filt:focus{border-color:var(--blue);}
+
+  .timeline{display:flex;flex-direction:column;gap:0;}
+  .tl-step{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:11.5px;color:var(--muted-2);}
+  .tl-step .dot{width:9px;height:9px;border-radius:50%;background:var(--muted-2);flex-shrink:0;}
+  .tl-step.done{color:var(--text);} .tl-step.done .dot{background:var(--green);box-shadow:0 0 6px var(--green);}
+  .tl-step.now{color:var(--amber);font-weight:700;} .tl-step.now .dot{background:var(--amber);box-shadow:0 0 8px var(--amber);}
+
+  .log-box{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:10px 12px;height:150px;overflow-y:auto;font-size:11px;font-family:'JetBrains Mono',monospace;line-height:1.7;}
+  .log-box .l-time{color:var(--muted-2);}
+  .l-green{color:var(--green);} .l-amber{color:var(--amber);} .l-red{color:var(--red);}
+
+  .tabs{display:flex;gap:6px;margin-bottom:14px;}
+  .tab{padding:7px 14px;border-radius:7px;background:var(--panel-2);border:1px solid var(--border);font-size:12px;cursor:pointer;color:var(--muted);}
+  .tab.active{background:var(--blue-dim);border-color:#24345f;color:var(--blue);font-weight:600;}
+
+  /* ============ DRIVER LAYOUT (map-based, from original prototype) ============ */
+  .driver-app{display:grid;grid-template-rows:1fr 128px;grid-template-columns:340px 1fr;grid-template-areas:"sidebar map" "sidebar rail";width:100%;height:100%;}
+  .sidebar{grid-area:sidebar;border-right:1px solid var(--border);background:var(--panel);overflow-y:auto;padding:16px;}
+  .section{margin-bottom:16px;border:1px solid var(--border);background:var(--panel-2);border-radius:10px;padding:14px;}
+  .section h2{font-family:'Space Grotesk',sans-serif;font-size:11.5px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin:0 0 12px 0;display:flex;align-items:center;gap:6px;}
+  .section label{display:block;font-size:11px;color:var(--muted);margin-bottom:5px;margin-top:10px;}
+  .section label:first-child{margin-top:0;}
+  .section select, .section input[type=text]{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:9px 10px;font-size:13px;outline:none;}
+  .metric-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+  .metric{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 10px;}
+  .metric .val{font-family:'JetBrains Mono',monospace;font-size:15px;font-weight:700;}
+  .metric .lbl{font-size:9.5px;color:var(--muted);margin-top:2px;}
+  .metric.save .val{color:var(--green);}
+  #map, #mapTP{grid-area:map;width:100%;height:100%;}
+  .rail{grid-area:rail;border-top:1px solid var(--border);background:var(--panel);padding:12px 22px;display:flex;flex-direction:column;}
+  .rail-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+  .rail-head h3{font-family:'Space Grotesk',sans-serif;font-size:12px;color:var(--muted);margin:0;text-transform:uppercase;letter-spacing:.6px;}
+  .rail-head .status{font-family:'JetBrains Mono',monospace;font-size:12px;font-weight:700;color:var(--muted-2);}
+  .rail-track-wrap{position:relative;flex:1;}
+  .rail-line{position:absolute;top:18px;left:6%;right:6%;height:3px;background:var(--border);border-radius:2px;}
+  .rail-line-fill{position:absolute;top:18px;left:6%;height:3px;width:0;background:var(--green);border-radius:2px;transition:width .1s linear;}
+  .rail-node{position:absolute;top:10px;transform:translateX(-50%);text-align:center;}
+  .rail-node .dot{width:9px;height:9px;border-radius:50%;background:var(--muted-2);margin:0 auto;}
+  .rail-node.amber .dot{background:var(--amber);box-shadow:0 0 8px var(--amber);}
+  .rail-node.green .dot{background:var(--green);box-shadow:0 0 8px var(--green);}
+  .rn-label{font-size:9px;color:var(--muted-2);margin-top:5px;white-space:nowrap;}
+  .rail-veh{position:absolute;top:-4px;transform:translateX(-50%);font-size:19px;transition:left .1s linear;}
+  .rail-empty{font-size:12px;color:var(--muted-2);text-align:center;padding-top:24px;}
+  .signal-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+  .signal-item:last-child{border-bottom:none;}
+  .signal-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;background:var(--muted-2);box-shadow:0 0 0 3px rgba(124,138,174,0.12);transition:all .3s ease;}
+  .signal-dot.amber{background:var(--amber);box-shadow:0 0 0 3px rgba(245,165,36,0.18);}
+  .signal-dot.green{background:var(--green);box-shadow:0 0 0 3px rgba(47,217,167,0.2);}
+  .signal-info{flex:1;min-width:0;} .signal-name{font-size:12.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .signal-sub{font-size:10.5px;color:var(--muted);} .signal-eta{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:var(--muted);}
+  .iot-item{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid var(--border);font-size:12px;}
+  .iot-item:last-child{border-bottom:none;} .iot-id{font-size:10px;color:var(--muted-2);}
+  .iot-chip{font-family:'JetBrains Mono',monospace;font-size:10px;padding:3px 8px;border-radius:5px;background:var(--panel-2);border:1px solid var(--border);color:var(--muted);}
+  .iot-chip.on{color:var(--green);background:var(--green-dim);border-color:#16493c;}
+  .loc-icon{border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;box-shadow:0 0 0 3px rgba(0,0,0,0.35);}
+  .loc-incident{background:var(--red);} .loc-hospital{background:var(--blue);}
+  .drv-icon{position:relative;width:20px;height:20px;} .drv-icon .core{position:absolute;inset:5px;background:var(--blue);border-radius:50%;box-shadow:0 0 8px var(--blue);}
+  .amb-icon{font-size:20px;filter:drop-shadow(0 0 6px rgba(0,0,0,.6));}
+  .sig-marker{width:14px;height:14px;border-radius:50%;background:var(--muted-2);border:2px solid var(--bg);}
+
+  /* Traffic police map+list split */
+  .tp-layout{display:grid;grid-template-columns:1fr 380px;height:100%;width:100%;}
+  .tp-map-wrap{position:relative;}
+  .tp-side{border-left:1px solid var(--border);background:var(--panel);overflow-y:auto;padding:16px;}
+
+  .footer-note{font-size:10.5px;color:var(--muted-2);padding:10px 26px;border-top:1px solid var(--border);}
+</style>
+</head>
+<body>
+
+<!-- ============ LOGIN SCREEN ============ -->
+<div class="login-wrap" id="loginWrap">
+  <div class="login-card">
+    <div class="mark">🚨</div>
+    <h1>Green Corridor Management System</h1>
+    <div class="sub">Kolhapur Emergency Response Network</div>
+    <label for="loginUser">Username</label>
+    <input type="text" id="loginUser" placeholder="e.g. dv202601" autocomplete="off" />
+    <label for="loginPass">Password</label>
+    <input type="password" id="loginPass" placeholder="••••••••" autocomplete="off" />
+    <button class="login-btn" id="loginBtn">🔐 LOGIN</button>
+    <div class="login-error" id="loginError"></div>
+
+    <div class="login-hint">
+      <b>Test accounts</b> (role is detected automatically from the database — you never choose it):
+      <div class="creds">
+        Driver: <span>dv202601–dv202604</span> / Pass@123<br>
+        Medical Staff: <span>mo202601–mo202604</span> / Pass@123<br>
+        Traffic Police/RTO: <span>tp202601–tp202604</span> / Pass@123<br>
+        Fire Brigade: <span>fb202601–fb202604</span> / Pass@123<br>
+        Police Vehicle: <span>pv202601–pv202604</span> / Pass@123<br>
+        NDRF: <span>nd202601–nd202604</span> / Pass@123<br>
+        Hospital: <span>hp202601–hp202608</span> / Pass@123<br>
+        Admin: <span>admin2026</span> / Pass@123
+      </div>
+    </div>
+
+    <button class="login-btn" id="publicReportBtn" type="button" style="margin-top:12px;background:linear-gradient(180deg,#F5A524,#B77410);box-shadow:0 4px 14px rgba(181,116,16,0.35);">🆘 REPORT ACCIDENT / FIRE (No Login Required)</button>
+  </div>
+</div>
+
+<!-- ============ PUBLIC EMERGENCY REPORT SCREEN (NO AUTH) ============ -->
+<div class="login-wrap" id="publicWrap" style="display:none;">
+  <div class="login-card" style="width:440px;">
+    <div class="mark">🆘</div>
+    <h1>Report an Emergency</h1>
+    <div class="sub">Public Accident / Fire / Rescue Reporting — Kolhapur</div>
+    <div class="login-error" id="publicNotice" style="display:block;background:var(--blue-dim);border-color:#24345f;color:var(--blue);margin-bottom:14px;">No login or password needed. Your report goes directly to the nearest emergency vehicle and Traffic Control.</div>
+
+    <label for="pubType">What happened?</label>
+    <select id="pubType" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:10px 11px;font-size:13.5px;">
+      <option value="ACCIDENT">🚗 Road Accident</option>
+      <option value="FIRE">🔥 Fire</option>
+      <option value="MEDICAL">🩺 Medical Emergency</option>
+      <option value="RESCUE">🌊 Rescue / Disaster (NDRF)</option>
+    </select>
+
+    <label for="pubLocation">Nearest Landmark</label>
+    <select id="pubLocation" style="width:100%;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:10px 11px;font-size:13.5px;"></select>
+
+    <button class="login-btn" id="pubUseGpsBtn" type="button" style="margin-top:10px;background:var(--panel-2);box-shadow:none;border:1px solid var(--border);color:var(--text);">📍 Use My Live GPS Location Instead</button>
+    <div class="footer-note" id="pubGpsStatus" style="padding:6px 0 0;border:none;"></div>
+
+    <label for="pubDesc">Describe briefly (optional)</label>
+    <textarea id="pubDesc" placeholder="e.g. Two-wheeler collision, one person injured…" style="width:100%;height:70px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:10px;font-size:12.5px;resize:vertical;font-family:inherit;"></textarea>
+
+    <label for="pubContact">Your Contact Number (optional)</label>
+    <input type="text" id="pubContact" placeholder="10-digit mobile number" />
+
+    <button class="login-btn" id="pubSubmitBtn" style="margin-top:16px;">🚨 SUBMIT EMERGENCY REPORT</button>
+    <div class="login-error" id="pubSuccess" style="display:none;background:var(--green-dim);border-color:#16493c;color:var(--green);"></div>
+
+    <div class="login-hint" style="text-align:center;">
+      <a href="#" id="pubBackBtn" style="color:var(--blue);text-decoration:none;font-size:12px;">← Back to Login</a>
+    </div>
+  </div>
+</div>
+
+<!-- ============ APP SHELL ============ -->
+<div class="app" id="app">
+  <div class="topbar">
+    <div class="left">
+      <div class="brand">
+        <div class="mark">🚨</div>
+        <div><h1>Green Corridor Control</h1><span>Kolhapur Emergency Network</span></div>
+      </div>
+      <div class="status-row" style="margin-left:14px;">
+        <span class="status-dot"><i></i>BACKEND ONLINE</span>
+        <span class="status-dot"><i></i>DATABASE ONLINE</span>
+        <span class="status-dot"><i></i>GPS ONLINE</span>
+        <span class="status-dot"><i></i>SOCKET ONLINE</span>
+        <span class="status-dot"><i></i>SIGNAL NETWORK ONLINE</span>
+      </div>
+      <div class="mode-badge" id="modeBadge" style="color:var(--green);border-color:#16493c;background:var(--green-dim);">🟢 LIVE MODE</div>
+    </div>
+    <div class="right">
+      <div class="clock" id="clock">--:--:--</div>
+      <div class="role-chip"><span class="rdot"></span><span id="roleChipText">—</span></div>
+      <button class="logout-btn" id="logoutBtn">Logout</button>
+    </div>
+  </div>
+
+  <div class="main-area">
+    <!-- DRIVER / FIRE / POLICE-VEHICLE / NDRF DASHBOARD -->
+    <div class="dash" id="dash-DRIVER">
+      <div class="driver-app">
+        <div class="sidebar">
+          <div class="section">
+            <h2>🚑 Vehicle & Crew</h2>
+            <div class="kv"><span class="k">Driver</span><span class="v" id="drvName">—</span></div>
+            <div class="kv"><span class="k">Driver ID</span><span class="v" id="drvId">—</span></div>
+            <div class="kv"><span class="k">Vehicle ID</span><span class="v" id="drvVehId">—</span></div>
+            <div class="kv"><span class="k">Reg. No.</span><span class="v" id="drvReg">—</span></div>
+            <div class="kv"><span class="k">Vehicle Type</span><span class="v" id="drvType">—</span></div>
+            <div class="kv"><span class="k">GPS Status</span><span class="v" id="drvGps">OFF</span></div>
+          </div>
+
+          <div class="section" id="incidentAlertSection">
+            <h2>🆘 Public Emergency Alerts <span class="badge red" id="incidentAlertCount" style="display:none;">0</span></h2>
+            <div id="incidentAlertList"><div class="empty">No public accident/fire reports assigned to your vehicle right now.</div></div>
+          </div>
+
+          <div class="section">
+            <h2>📍 Route Setup</h2>
+            <label for="origin">Pickup Point</label>
+            <select id="origin"></select>
+            <label for="destination" id="destLabel">Destination Hospital</label>
+            <select id="destination"></select>
+            <div id="liveGpsBanner" style="display:none;margin-top:8px;padding:8px 10px;border-radius:7px;font-size:11.5px;font-family:'JetBrains Mono',monospace;"></div>
+            <button class="btn primary" id="dispatchBtn" style="width:100%;margin-top:14px;">🚨 START EMERGENCY TRIP</button>
+            <div class="btn-row">
+              <button class="btn ghost sm" id="shareLocBtn">📡 SHARE LIVE LOCATION</button>
+              <button class="btn amber sm" id="requestCorridorBtn" disabled>🟢 REQUEST GREEN CORRIDOR</button>
+            </div>
+            <div class="btn-row">
+              <button class="btn ghost sm" id="stopTripBtn" disabled>⏹ STOP TRIP</button>
+              <button class="btn ghost sm" id="cancelTripBtn" disabled>✕ CANCEL EMERGENCY</button>
+            </div>
+            <div class="btn-row">
+              <button class="btn green sm" id="pickedUpBtn" style="width:100%;display:none;">🏥 PATIENT PICKED UP — GO TO HOSPITAL</button>
+            </div>
+            <div class="btn-row">
+              <button class="btn primary sm" id="sosBtn" style="width:100%;">🆘 EMERGENCY SOS</button>
+            </div>
+          </div>
+
+          <div class="section">
+            <h2>📊 Trip Metrics</h2>
+            <div id="metricsBox"><div class="empty">Select pickup + hospital, then start emergency trip.</div></div>
+          </div>
+
+          <div class="section">
+            <h2>🚦 Upcoming Signals</h2>
+            <div id="signalList"><div class="empty">Signal coordination plan appears after route is computed.</div></div>
+          </div>
+
+          <div class="section">
+            <h2>🔌 IoT Signal Status</h2>
+            <div id="iotList"><div class="empty">Connected controllers report ON/OFF state during a dispatch.</div></div>
+          </div>
+
+          <div class="section">
+            <h2>🖥 Dispatch Log</h2>
+            <div class="log-box" id="drvLogBox"><div><span class="l-time">[--:--:--]</span> System idle.</div></div>
+          </div>
+        </div>
+        <div id="map"></div>
+        <div class="rail">
+          <div class="rail-head"><h3>Green Corridor Timeline</h3><div class="status" id="railStatus">STANDBY</div></div>
+          <div class="rail-track-wrap" id="railTrack"><div class="rail-empty">Corridor timeline activates once a trip starts.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MEDICAL STAFF DASHBOARD -->
+    <div class="dash" id="dash-MEDICAL_STAFF">
+      <div class="scroll-page" style="width:100%;">
+        <div class="grid cols-3" style="margin-bottom:14px;">
+          <div class="card"><h3>Case</h3>
+            <div class="kv"><span class="k">Patient/Case ID</span><span class="v" id="medCaseId">—</span></div>
+            <div class="kv"><span class="k">Ambulance ID</span><span class="v" id="medVehId">—</span></div>
+            <div class="kv"><span class="k">Driver</span><span class="v" id="medDriver">—</span></div>
+          </div>
+          <div class="card"><h3>Route</h3>
+            <div class="kv"><span class="k">Destination</span><span class="v" id="medDest">—</span></div>
+            <div class="kv"><span class="k">Distance Remaining</span><span class="v" id="medDist">—</span></div>
+            <div class="kv"><span class="k">Live ETA</span><span class="v" id="medEta">—</span></div>
+          </div>
+          <div class="card"><h3>Status</h3>
+            <div class="kv"><span class="k">Green Corridor</span><span class="v"><span class="badge grey" id="medCorridorBadge">NO ACTIVE TRIP</span></span></div>
+            <div class="kv"><span class="k">Hospital Prep</span><span class="v"><span class="badge grey" id="medHospBadge">—</span></span></div>
+          </div>
+        </div>
+
+        <div class="grid cols-2">
+          <div class="card">
+            <h3>Update Patient / Case Details</h3>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:5px;">Patient Criticality</label>
+            <select class="filt" id="medCriticality" style="width:100%;margin-bottom:10px;">
+              <option value="STABLE">Stable</option>
+              <option value="SERIOUS">Serious</option>
+              <option value="CRITICAL">Critical</option>
+            </select>
+            <label style="font-size:11px;color:var(--muted);display:block;margin-bottom:5px;">Emergency Category</label>
+            <select class="filt" id="medCategory" style="width:100%;margin-bottom:10px;">
+              <option value="TRAUMA">Trauma Case</option>
+              <option value="CARDIAC">Cardiac Emergency</option>
+              <option value="ACCIDENT">Accident Case</option>
+              <option value="OTHER">Other</option>
+            </select>
+            <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;margin-top:6px;">
+              <input type="checkbox" id="medOxygen" style="width:auto;"> Oxygen requirement
+            </label>
+            <div class="btn-row">
+              <button class="btn blue sm" id="medUpdateBtn">💾 Update Case</button>
+              <button class="btn green sm" id="medIncomingBtn">📨 Send "Patient Incoming"</button>
+            </div>
+          </div>
+          <div class="card">
+            <h3>Notes</h3>
+            <textarea id="medNotes" placeholder="Additional clinical notes for the receiving hospital…" style="width:100%;height:88px;background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:7px;padding:10px;font-size:12.5px;resize:vertical;"></textarea>
+            <div class="footer-note" style="padding:8px 0 0;">Visible only to Medical Staff, the assigned Hospital, and Admin — never to Traffic Police, per privacy policy.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TRAFFIC POLICE / RTO DASHBOARD -->
+    <div class="dash" id="dash-TRAFFIC_POLICE">
+      <div class="tp-layout">
+        <div class="tp-map-wrap"><div id="mapTP" style="width:100%;height:100%;"></div></div>
+        <div class="tp-side">
+          <div class="section" style="margin-bottom:16px;">
+            <h2>🚑 Active Emergency Vehicle</h2>
+            <div id="tpVehicleCard"><div class="empty">No active emergency vehicle right now.</div></div>
+          </div>
+          <div class="section" style="margin-bottom:16px;">
+            <h2>🚦 Signal Sequence</h2>
+            <div id="tpSignalSeq"><div class="empty">Appears once a route is dispatched.</div></div>
+          </div>
+          <div class="section" style="margin-bottom:16px;">
+            <h2>🟢 Corridor Control</h2>
+            <div class="btn-row">
+              <button class="btn green sm" id="tpApproveBtn" disabled>✔ Approve Corridor</button>
+              <button class="btn primary sm" id="tpRejectBtn" disabled>✕ Reject</button>
+            </div>
+            <div class="btn-row">
+              <button class="btn amber sm" id="tpPauseBtn" disabled>⏸ Pause</button>
+              <button class="btn ghost sm" id="tpEndBtn" disabled>⏹ End Corridor</button>
+            </div>
+            <div class="btn-row">
+              <button class="btn ghost sm" id="tpOverrideBtn" disabled>⚠ Override Recommendation</button>
+              <button class="btn ghost sm" id="tpAlertBtn">📢 Send Alert</button>
+            </div>
+          </div>
+          <div class="section">
+            <h2>🖥 Audit / Action Log</h2>
+            <div class="log-box" id="tpLogBox"><div><span class="l-time">[--:--:--]</span> Traffic control idle.</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HOSPITAL DASHBOARD -->
+    <div class="dash" id="dash-HOSPITAL">
+      <div class="scroll-page" style="width:100%;">
+        <div class="grid cols-4" style="margin-bottom:18px;">
+          <div class="stat red"><div class="val" id="hCardAmb">0</div><div class="lbl">Incoming Ambulances</div></div>
+          <div class="stat amber"><div class="val" id="hCardCritical">0</div><div class="lbl">Critical Patients</div></div>
+          <div class="stat blue"><div class="val" id="hCardEta5">0</div><div class="lbl">ETA &lt; 5 Minutes</div></div>
+          <div class="stat green"><div class="val" id="hCardCorridor">0</div><div class="lbl">Active Green Corridors</div></div>
+        </div>
+        <div class="card" style="margin-bottom:14px;">
+          <h3>Live Vehicle Location <span class="badge grey" id="hLiveBadge">NO ACTIVE TRIP</span></h3>
+          <div id="mapHosp" style="width:100%;height:260px;border-radius:8px;overflow:hidden;"></div>
+        </div>
+        <div class="card">
+          <h3>Incoming Emergency Vehicles — <span id="hHospName">—</span></h3>
+          <div id="hospitalList"><div class="empty">No incoming emergency vehicles.</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ADMIN DASHBOARD -->
+    <div class="dash" id="dash-ADMIN">
+      <div class="scroll-page" style="width:100%;">
+        <div class="grid cols-4" style="margin-bottom:16px;">
+          <div class="stat blue"><div class="val" id="aStatTotal">0</div><div class="lbl">Emergencies Today</div></div>
+          <div class="stat green"><div class="val" id="aStatSaved">0:00</div><div class="lbl">Avg. Corridor Time Saved</div></div>
+          <div class="stat amber"><div class="val" id="aStatSignals">0</div><div class="lbl">Signal Activations</div></div>
+          <div class="stat red"><div class="val" id="aStatUsers">32</div><div class="lbl">Registered Users</div></div>
+        </div>
+
+        <div class="tabs">
+          <div class="tab active" data-atab="users">Users</div>
+          <div class="tab" data-atab="vehicles">Vehicles</div>
+          <div class="tab" data-atab="reports">Reports</div>
+          <div class="tab" data-atab="audit">Audit Log</div>
+        </div>
+
+        <div id="admin-users" class="card">
+          <h3>
+            User Database
+            <span style="display:flex;gap:8px;">
+              <input class="search" id="adminSearch" placeholder="Search by username / name…">
+              <select class="filt" id="adminRoleFilter">
+                <option value="">All roles</option>
+                <option value="DRIVER">Driver</option>
+                <option value="MEDICAL_STAFF">Medical Staff</option>
+                <option value="TRAFFIC_POLICE">Traffic Police</option>
+                <option value="HOSPITAL">Hospital</option>
+                <option value="ADMIN">Admin</option>
+              </select>
+            </span>
+          </h3>
+          <div style="max-height:360px;overflow-y:auto;">
+            <table>
+              <thead><tr><th>Username</th><th>Full Name</th><th>Role</th><th>Vehicle / Hospital</th><th>Status</th></tr></thead>
+              <tbody id="adminUserTbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <div id="admin-vehicles" class="card" style="display:none;">
+          <h3>Vehicle Registry</h3>
+          <table>
+            <thead><tr><th>Vehicle ID</th><th>Reg. No.</th><th>Type</th><th>Status</th><th>Fitness</th><th>Insurance</th><th>Authorized</th></tr></thead>
+            <tbody id="adminVehicleTbody"></tbody>
+          </table>
+        </div>
+
+        <div id="admin-reports" class="card" style="display:none;">
+          <h3>Cases by Vehicle Type (This Month)</h3>
+          <div id="reportBars"></div>
+        </div>
+
+        <div id="admin-audit" class="card" style="display:none;">
+          <h3>System Audit Log</h3>
+          <div class="log-box" id="adminLogBox" style="height:320px;"><div><span class="l-time">[--:--:--]</span> No audit events yet.</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="footer-note">Kolhapur Emergency Response Network · Live GPS tracking active · Signal actuation requires Traffic Control authorization.</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+/* ================================================================
+   DEMO "DATABASE" — in a real deployment this lives server-side;
+   here it's an in-memory mock so the whole system runs from one file.
+   ================================================================ */
+const DEMO_PASSWORD = 'Pass@123';
+
+const HOSPITALS = [
+  {id:'HOSP-KOP-001', name:'CPR Hospital (Govt. District Hospital)', lat:16.6951, lng:74.2320},
+  {id:'HOSP-KOP-002', name:'Aster Aadhar Hospital', lat:16.6766, lng:74.2495},
+  {id:'HOSP-KOP-003', name:'Sanjeevan Hospital', lat:16.7011, lng:74.2367},
+  {id:'HOSP-KOP-004', name:"District Women's Hospital", lat:16.6940, lng:74.2352},
+  {id:'HOSP-KOP-005', name:'Apple Saraswati Multispeciality Hospital', lat:16.6903, lng:74.2447},
+  {id:'HOSP-KOP-006', name:'D. Y. Patil Hospital & Research Centre', lat:16.6668, lng:74.2596},
+  {id:'HOSP-KOP-007', name:'Ashoka Superspeciality Hospital', lat:16.6875, lng:74.2461},
+  {id:'HOSP-KOP-008', name:'Silver Cross Hospital', lat:16.6987, lng:74.2388},
+];
+const LANDMARKS = [
+  {id:'railway', name:'Kolhapur Railway Station', lat:16.6816, lng:74.2433},
+  {id:'airport', name:'Kolhapur Airport, Ujalaiwadi', lat:16.6659, lng:74.2887},
+  {id:'university', name:'Shivaji University', lat:16.7099, lng:74.2436},
+  {id:'rankala', name:'Rankala Lake', lat:16.6963, lng:74.2233},
+  {id:'mahalaxmi', name:'Mahalaxmi Temple Area', lat:16.6929, lng:74.2264},
+  {id:'bindu', name:'Bindu Chowk', lat:16.6980, lng:74.2333},
+  {id:'cbs', name:'CBS Bus Stand', lat:16.6975, lng:74.2358},
+  {id:'rajarampuri', name:'Rajarampuri', lat:16.6889, lng:74.2415},
+  {id:'shahupuri', name:'Shahupuri', lat:16.7016, lng:74.2298},
+  {id:'tarabai', name:'Tarabai Park', lat:16.7075, lng:74.2270},
+];
+
+/* Kolhapur Municipal Corporation Fire Brigade — Central Fire Station.
+   Used as the default pickup point for FIRE_BRIGADE vehicles. */
+const FIRE_STATION = {id:'firehq', name:'Kolhapur Fire Brigade Head Office (Central Fire Station)', lat:16.6928, lng:74.2288};
+/* Origin choices shown to a driver = the fire station first, then the general city landmarks. */
+const ORIGIN_POINTS = [FIRE_STATION, ...LANDMARKS];
+
+/* Likely fire-incident sites across the city — shown as the "destination" for a
+   FIRE_BRIGADE vehicle instead of a hospital list, so the route is
+   Fire Brigade Office → actual fire location. */
+const FIRE_INCIDENT_SITES = [
+  {id:'fis-laxmipuri', name:'Laxmipuri Market Fire Site', lat:16.6940, lng:74.2410},
+  {id:'fis-udyamnagar', name:'Shivaji Udyamnagar Industrial Estate', lat:16.6832, lng:74.2378},
+  {id:'fis-gangavesh', name:'Gangavesh Old City Area', lat:16.6900, lng:74.2270},
+  {id:'fis-apmc', name:'Shahu Market Yard (APMC)', lat:16.6790, lng:74.2280},
+  {id:'fis-shahupuri', name:'Shahupuri Residential Zone', lat:16.7020, lng:74.2310},
+  {id:'fis-bawada', name:'Kasba Bawada', lat:16.7100, lng:74.2200},
+  {id:'fis-saneguruji', name:'Sane Guruji Vasahat', lat:16.6870, lng:74.2340},
+  {id:'fis-rajarampuri', name:'Rajarampuri Fire Site', lat:16.6889, lng:74.2415},
+];
+
+/* Real named traffic junctions / chowks across Kolhapur city — used so the Green
+   Corridor signal plan shows actual local junction names instead of generic labels. */
+const KOLHAPUR_JUNCTIONS = [
+  {code:'KOP-SIG-BND', name:'Bindu Chowk',              lat:16.6980, lng:74.2333},
+  {code:'KOP-SIG-DBH', name:'Dabholkar Corner',          lat:16.6940, lng:74.2358},
+  {code:'KOP-SIG-SHV', name:'Shivaji Chowk (Shivaji Peth)', lat:16.6906, lng:74.2371},
+  {code:'KOP-SIG-RAJ', name:'Rajarampuri 3rd Lane Junction', lat:16.6887, lng:74.2413},
+  {code:'KOP-SIG-KWL', name:'Kawala Naka',               lat:16.6961, lng:74.2296},
+  {code:'KOP-SIG-SHP', name:'Shahupuri Corner',          lat:16.7014, lng:74.2300},
+  {code:'KOP-SIG-MHD', name:'Mahadwar Road Junction',    lat:16.6957, lng:74.2280},
+  {code:'KOP-SIG-YLM', name:'Yellamma Chowk',            lat:16.6928, lng:74.2299},
+  {code:'KOP-SIG-UMT', name:'Uma Talkies Chowk',         lat:16.6899, lng:74.2352},
+  {code:'KOP-SIG-PRK', name:'Parikh Pool Junction',      lat:16.6975, lng:74.2405},
+  {code:'KOP-SIG-TRB', name:'Tararani Chowk',            lat:16.7048, lng:74.2276},
+  {code:'KOP-SIG-GDH', name:'Gadhi Chowk, Udyamnagar',   lat:16.6832, lng:74.2378},
+  {code:'KOP-SIG-RNK', name:'Rankala Chowk',             lat:16.6952, lng:74.2242},
+  {code:'KOP-SIG-CBS', name:'CBS Naka',                  lat:16.6972, lng:74.2360},
+  {code:'KOP-SIG-FLC', name:'Fule Chowk',                lat:16.6944, lng:74.2318},
+  {code:'KOP-SIG-SSN', name:'Sasane Ground Junction',    lat:16.6862, lng:74.2400},
+  {code:'KOP-SIG-RKC', name:'Ruikar Colony Junction',    lat:16.6805, lng:74.2418},
+  {code:'KOP-SIG-UNV', name:'University Road Junction',  lat:16.7060, lng:74.2440},
+];
+
+function makeCrew(prefix, count, role, vtype, names){
+  const out = {};
+  for(let i=1;i<=count;i++){
+    const n = String(i).padStart(2,'0');
+    const username = `${prefix}2026${n}`;
+    const base = LANDMARKS[(i-1 + {dv:0,fb:2,pv:4,nd:6}[prefix]||0) % LANDMARKS.length];
+    out[username] = {
+      password:DEMO_PASSWORD, role, fullName: names[i-1],
+      driverId: role==='DRIVER' ? `${prefix.toUpperCase()}-2026-0${n}` : undefined,
+      staffId: role==='MEDICAL_STAFF' ? `MO-2026-0${n}` : undefined,
+      officerId: role==='TRAFFIC_POLICE' ? `TP-2026-0${n}` : undefined,
+      zone: role==='TRAFFIC_POLICE' ? `Zone ${i}` : undefined,
+      vehicleId: (role==='DRIVER') ? `${prefix.toUpperCase()}-2026-0${n}` : (role==='MEDICAL_STAFF' ? `DV-2026-0${n}` : undefined),
+      vehicleType: vtype,
+      regNo: (role==='DRIVER') ? `MH09-${prefix.toUpperCase()}-${1000+i}` : undefined,
+      hospitalId: role==='HOSPITAL' ? HOSPITALS[i-1].id : undefined,
+      // Standby / base station location — used to find the nearest unit to a public incident report.
+      baseLat: role==='DRIVER' ? base.lat + (Math.random()-0.5)*0.004 : undefined,
+      baseLng: role==='DRIVER' ? base.lng + (Math.random()-0.5)*0.004 : undefined,
+      baseName: role==='DRIVER' ? base.name : undefined,
+    };
+  }
+  return out;
+}
+
+const DB_USERS = Object.assign({},
+  makeCrew('dv',4,'DRIVER','AMBULANCE', ['Vaibhav Jadhav','Suresh Patil','Anil Kamble','Ramesh Sawant']),
+  makeCrew('mo',4,'MEDICAL_STAFF',null, ['Dr. Snehal Kore','Dr. Priya Deshmukh','Dr. Rahul Naik','Dr. Aarti Shinde']),
+  makeCrew('tp',4,'TRAFFIC_POLICE',null, ['PSI Mahesh Bhosale','PSI Sunita Chavan','PSI Vikram More','PSI Ashwini Pawar']),
+  makeCrew('fb',4,'DRIVER','FIRE_BRIGADE', ['Fire Op. Dinesh Patil','Fire Op. Santosh Yadav','Fire Op. Ganesh Koli','Fire Op. Mahadev Salunkhe']),
+  makeCrew('pv',4,'DRIVER','POLICE_VEHICLE', ['Const. Rohit Mane','Const. Sandeep Bhoite','Const. Amol Gaikwad','Const. Nitin Powar']),
+  makeCrew('nd',4,'DRIVER','NDRF', ['NDRF Havildar Kadam','NDRF Havildar Jagtap','NDRF Havildar Bhosale','NDRF Havildar Chougule']),
+  makeCrew('hp',8,'HOSPITAL',null, ['CPR Hospital Desk','Aster Aadhar Desk','Sanjeevan Hospital Desk',"Women's Hospital Desk",'Apple Saraswati Desk','D. Y. Patil Hospital Desk','Ashoka Superspeciality Desk','Silver Cross Hospital Desk']),
+  { admin2026: {password:DEMO_PASSWORD, role:'ADMIN', fullName:'System Administrator'} }
+);
+
+// Vehicle registry (RTO-style records used by Admin dashboard)
+const VEHICLES = [];
+['dv','fb','pv','nd'].forEach(pref=>{
+  Object.entries(DB_USERS).forEach(([uname,u])=>{
+    if(u.role==='DRIVER' && uname.startsWith(pref)){
+      VEHICLES.push({vehicleId:u.vehicleId, regNo:u.regNo, type:u.vehicleType, status:'IDLE', fitness:'VALID', insurance:'VALID', authorized:true, username:uname});
+    }
+  });
+});
+
+/* ================================================================
+   PUBLIC EMERGENCY REPORTS — submitted with no login/password.
+   Routed automatically to the nearest matching vehicle's driver login.
+   ================================================================ */
+const PUBLIC_INCIDENTS = [];
+const INCIDENT_TYPE_TO_VEHICLE = {ACCIDENT:'AMBULANCE', MEDICAL:'AMBULANCE', FIRE:'FIRE_BRIGADE', RESCUE:'NDRF'};
+const INCIDENT_ICON = {ACCIDENT:'🚗', FIRE:'🔥', MEDICAL:'🩺', RESCUE:'🌊'};
+const INCIDENT_LABEL = {ACCIDENT:'Road Accident', FIRE:'Fire', MEDICAL:'Medical Emergency', RESCUE:'Rescue / Disaster'};
+function findNearestUnit(vtype, lat, lng){
+  let best=null, bestDist=Infinity;
+  Object.entries(DB_USERS).forEach(([uname,u])=>{
+    if(u.role==='DRIVER' && u.vehicleType===vtype){
+      const d = haversine({lat,lng},{lat:u.baseLat,lng:u.baseLng});
+      if(d<bestDist){ bestDist=d; best={username:uname, ...u}; }
+    }
+  });
+  return best ? {...best, distanceM:bestDist} : null;
+}
+
+let CURRENT_USER = null; // {username, ...DB_USERS[username]}
+const AUDIT_LOG = [];
+
+/* Shared "active trip" state — the single source of truth every dashboard reads from */
+let TRIP = null;
+/*
+TRIP = {
+  emergencyCode, vehicleId, vehicleType, driverName, medicalStaffName,
+  originName, destHospital, status, corridorStatus,
+  patientCase:{criticality,category,oxygen,notes,incomingSent,hospitalReady},
+  distance, etaNormalSec, etaCorridorSec, signals[], routeCoords[],
+  progressFrac, currentSpeedKmh, sosActive
+}
+*/
+
+/* ================================================================
+   PERSISTENCE — keeps data alive across page refreshes and keeps
+   every device in sync (uses the artifact's built-in storage API).
+   Fails silently (app just behaves as before) if storage isn't available.
+   ================================================================ */
+const GC_STORAGE_OK = (typeof window!=='undefined' && window.storage && typeof window.storage.get==='function');
+const GC_SHARED_KEY = 'gc_shared_state_v1';
+const GC_SESSION_KEY = 'gc_session_user_v1';
+let _gcLastSaveAt = 0, _gcSaveQueued = false, _gcSaving = false;
+
+async function _gcDoSave(){
+  if(!GC_STORAGE_OK) return;
+  _gcSaving = true; _gcLastSaveAt = Date.now();
+  try{
+    const payload = { TRIP, PUBLIC_INCIDENTS, AUDIT_LOG };
+    await window.storage.set(GC_SHARED_KEY, JSON.stringify(payload), true);
+  }catch(e){ /* storage unavailable — ignore, app keeps working locally */ }
+  _gcSaving = false;
+  if(_gcSaveQueued){ _gcSaveQueued=false; setTimeout(_gcDoSave, 800); }
+}
+function saveSharedState(){
+  if(!GC_STORAGE_OK) return;
+  if(_gcSaving || Date.now()-_gcLastSaveAt<800){ _gcSaveQueued=true; return; }
+  _gcDoSave();
+}
+async function loadSharedState(){
+  if(!GC_STORAGE_OK) return false;
+  try{
+    const res = await window.storage.get(GC_SHARED_KEY, true);
+    if(!res || !res.value) return false;
+    const payload = JSON.parse(res.value);
+    TRIP = payload.TRIP || null;
+    PUBLIC_INCIDENTS.length = 0; (payload.PUBLIC_INCIDENTS||[]).forEach(x=>PUBLIC_INCIDENTS.push(x));
+    AUDIT_LOG.length = 0; (payload.AUDIT_LOG||[]).forEach(x=>AUDIT_LOG.push(x));
+    return true;
+  }catch(e){ return false; }
+}
+async function saveSession(username){
+  if(!GC_STORAGE_OK) return;
+  try{ await window.storage.set(GC_SESSION_KEY, username, false); }catch(e){}
+}
+async function clearSession(){
+  if(!GC_STORAGE_OK) return;
+  try{ await window.storage.delete(GC_SESSION_KEY, false); }catch(e){}
+}
+async function loadSession(){
+  if(!GC_STORAGE_OK) return null;
+  try{ const res = await window.storage.get(GC_SESSION_KEY, false); return res ? res.value : null; }catch(e){ return null; }
+}
+
+function pad(n){return n.toString().padStart(2,'0');}
+function nowStr(){const d=new Date();return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;}
+function fmtTime(sec){sec=Math.max(0,Math.round(sec));const m=Math.floor(sec/60),s=sec%60;return `${pad(m)}:${pad(s)}`;}
+setInterval(()=>{ const c=document.getElementById('clock'); if(c) c.textContent = nowStr(); },1000);
+
+function audit(action, meta){
+  AUDIT_LOG.unshift({time: nowStr(), user: CURRENT_USER ? CURRENT_USER.username : 'system', action, meta: meta||''});
+  renderAuditLog();
+  saveSharedState();
+}
+function renderAuditLog(){
+  const box = document.getElementById('adminLogBox');
+  if(!box) return;
+  if(!AUDIT_LOG.length){ box.innerHTML = '<div><span class="l-time">[--:--:--]</span> No audit events yet.</div>'; return; }
+  box.innerHTML = AUDIT_LOG.slice(0,80).map(e=>`<div><span class="l-time">[${e.time}]</span> <b>${e.user}</b> → ${e.action}${e.meta?' — '+e.meta:''}</div>`).join('');
+}
+
+/* ================================================================
+   LOGIN
+   ================================================================ */
+document.getElementById('loginBtn').addEventListener('click', doLogin);
+document.getElementById('loginPass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+
+function doLogin(){
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value.trim();
+  const errBox = document.getElementById('loginError');
+  const record = DB_USERS[u];
+  // Role is NEVER chosen by the user — it comes only from the DB record below.
+  if(!record || record.password !== p){
+    errBox.style.display='block';
+    errBox.textContent = 'Invalid username or password.';
+    return;
+  }
+  errBox.style.display='none';
+  CURRENT_USER = Object.assign({username:u}, record);
+  audit('LOGIN', `role=${CURRENT_USER.role}`);
+  saveSession(u);
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('app').classList.add('active');
+  openDashboardForRole(CURRENT_USER.role);
+}
+
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  audit('LOGOUT');
+  CURRENT_USER = null;
+  clearSession();
+  document.getElementById('app').classList.remove('active');
+  document.getElementById('loginWrap').style.display='flex';
+  document.getElementById('loginUser').value=''; document.getElementById('loginPass').value='';
+  document.querySelectorAll('.dash').forEach(d=>d.classList.remove('active'));
+});
+
+/* ================================================================
+   PUBLIC EMERGENCY REPORT SCREEN — no username/password required.
+   ================================================================ */
+(function initPublicReportScreen(){
+  const pubLocSel = document.getElementById('pubLocation');
+  LANDMARKS.forEach(l=>{ const o=document.createElement('option'); o.value=l.id; o.textContent=l.name; pubLocSel.appendChild(o); });
+  let pubGpsCoord = null;
+
+  document.getElementById('publicReportBtn').addEventListener('click', ()=>{
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('publicWrap').style.display='flex';
+    document.getElementById('pubSuccess').style.display='none';
+  });
+  document.getElementById('pubBackBtn').addEventListener('click', (e)=>{
+    e.preventDefault();
+    document.getElementById('publicWrap').style.display='none';
+    document.getElementById('loginWrap').style.display='flex';
+  });
+  document.getElementById('pubUseGpsBtn').addEventListener('click', ()=>{
+    const status = document.getElementById('pubGpsStatus');
+    if(!navigator.geolocation){ status.textContent='GPS not available on this device.'; return; }
+    status.textContent = 'Fetching your live location…';
+    navigator.geolocation.getCurrentPosition(pos=>{
+      pubGpsCoord = {lat:pos.coords.latitude, lng:pos.coords.longitude};
+      status.textContent = `📍 Using your live GPS location (accuracy ±${Math.round(pos.coords.accuracy)}m).`;
+    }, ()=>{ status.textContent = 'Could not fetch GPS — please choose a landmark instead.'; }, {enableHighAccuracy:true});
+  });
+
+  document.getElementById('pubSubmitBtn').addEventListener('click', ()=>{
+    const type = document.getElementById('pubType').value;
+    const landmark = LANDMARKS.find(l=>l.id===pubLocSel.value);
+    const loc = pubGpsCoord || landmark;
+    const locName = pubGpsCoord ? `Live GPS Pin near ${landmark.name}` : landmark.name;
+    const description = document.getElementById('pubDesc').value.trim();
+    const contact = document.getElementById('pubContact').value.trim();
+
+    const vtype = INCIDENT_TYPE_TO_VEHICLE[type];
+    const nearest = findNearestUnit(vtype, loc.lat, loc.lng);
+
+    const incident = {
+      id: 'INC-' + Date.now(), type, typeLabel: INCIDENT_LABEL[type],
+      lat: loc.lat, lng: loc.lng, locationName: locName, description, contact,
+      time: nowStr(), status:'NEW', assignedUsername: nearest ? nearest.username : null,
+    };
+    PUBLIC_INCIDENTS.unshift(incident);
+    audit('PUBLIC_INCIDENT_REPORTED', `${incident.id} (${incident.typeLabel}) @ ${locName}${nearest ? ' → routed to '+nearest.username : ' — no unit available'}`);
+
+    const successBox = document.getElementById('pubSuccess');
+    successBox.style.display='block';
+    successBox.innerHTML = nearest
+      ? `✅ Report received. Nearest ${vtype.replace('_',' ')} unit (<b>${nearest.vehicleId}</b> — ${nearest.fullName}) has been alerted and will respond.`
+      : `✅ Report received and logged with Traffic Control. No unit of the required type is currently available to auto-assign.`;
+
+    document.getElementById('pubDesc').value=''; document.getElementById('pubContact').value='';
+    pubGpsCoord = null; document.getElementById('pubGpsStatus').textContent='';
+    if(CURRENT_USER && CURRENT_USER.role==='DRIVER') renderIncidentAlerts();
+  });
+})();
+
+const ROLE_LABELS = {DRIVER:'Emergency Vehicle Driver', MEDICAL_STAFF:'Medical Staff', TRAFFIC_POLICE:'Traffic Police / RTO', HOSPITAL:'Hospital', ADMIN:'System Admin'};
+
+function openDashboardForRole(role){
+  document.querySelectorAll('.dash').forEach(d=>d.classList.remove('active'));
+  document.getElementById('dash-'+role).classList.add('active');
+  document.getElementById('roleChipText').textContent = `${CURRENT_USER.fullName} · ${ROLE_LABELS[role]}`;
+
+  if(role==='DRIVER') initDriverDash();
+  if(role==='MEDICAL_STAFF') renderMedicalDash();
+  if(role==='TRAFFIC_POLICE') initTrafficDash();
+  if(role==='HOSPITAL') renderHospitalDash();
+  if(role==='ADMIN') renderAdminDash();
+}
+
+/* ================================================================
+   DRIVER DASHBOARD  (map + route logic reused from the original prototype)
+   ================================================================ */
+let mapDriverInited = false;
+let map, originMarker=null, destMarker=null, routeLine=null, ambMarker=null, signalMarkers=[];
+let animTimer=null, routeCoords=[], signals=[];
+let liveOn = false, liveWatchId=null, liveDriverMarker=null;
+
+function initDriverDash(){
+  document.getElementById('drvName').textContent = CURRENT_USER.fullName;
+  document.getElementById('drvId').textContent = CURRENT_USER.driverId || '—';
+  document.getElementById('drvVehId').textContent = CURRENT_USER.vehicleId || '—';
+  document.getElementById('drvReg').textContent = CURRENT_USER.regNo || '—';
+  document.getElementById('drvType').textContent = (CURRENT_USER.vehicleType||'—').replace('_',' ');
+
+  const originSel = document.getElementById('origin');
+  const destSel = document.getElementById('destination');
+  const isFireBrigade = CURRENT_USER.vehicleType === 'FIRE_BRIGADE';
+  if(!originSel.options.length){
+    ORIGIN_POINTS.forEach(l=>{ const o=document.createElement('option'); o.value=l.id; o.textContent=l.name; originSel.appendChild(o); });
+    if(isFireBrigade){
+      FIRE_INCIDENT_SITES.forEach(s=>{ const o=document.createElement('option'); o.value=s.id; o.textContent=s.name; destSel.appendChild(o); });
+      document.getElementById('destLabel').textContent = '🔥 Fire Incident Location';
+      originSel.value = FIRE_STATION.id; destSel.selectedIndex = 0;
+    } else {
+      HOSPITALS.forEach(h=>{ const o=document.createElement('option'); o.value=h.id; o.textContent=h.name; destSel.appendChild(o); });
+      originSel.selectedIndex = 6; destSel.selectedIndex = 0;
+    }
+  }
+
+  if(!mapDriverInited){
+    map = L.map('map',{zoomControl:true}).setView(isFireBrigade ? [FIRE_STATION.lat,FIRE_STATION.lng] : [16.6980,74.2400], 14);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors',maxZoom:16}).addTo(map);
+    /* Plot every known point of interest on the map immediately (before any trip starts)
+       so the full Kolhapur city detail — fire station, hospitals, landmarks — is visible right away. */
+    L.marker([FIRE_STATION.lat,FIRE_STATION.lng],{icon:makeDivIcon('loc-incident','🚒',24)}).addTo(map).bindPopup(`<b>${FIRE_STATION.name}</b>`);
+    HOSPITALS.forEach(h=>L.marker([h.lat,h.lng],{icon:makeDivIcon('loc-hospital','🏥',18)}).addTo(map).bindPopup(`<b>${h.name}</b>`));
+    LANDMARKS.forEach(l=>L.circleMarker([l.lat,l.lng],{radius:4,color:'#5B8CFF',weight:1,fillColor:'#5B8CFF',fillOpacity:0.7}).addTo(map).bindPopup(`<b>${l.name}</b>`));
+    if(isFireBrigade) FIRE_INCIDENT_SITES.forEach(s=>L.circleMarker([s.lat,s.lng],{radius:5,color:'#F5A524',weight:1.5,fillColor:'#F5A524',fillOpacity:0.5}).addTo(map).bindPopup(`<b>${s.name}</b>`));
+    mapDriverInited = true;
+  } else {
+    setTimeout(()=>map.invalidateSize(), 50);
+  }
+
+  document.getElementById('dispatchBtn').onclick = ()=>startEmergencyTrip();
+  document.getElementById('stopTripBtn').onclick = stopEmergencyTrip;
+  document.getElementById('cancelTripBtn').onclick = cancelEmergency;
+  document.getElementById('shareLocBtn').onclick = toggleShareLocation;
+  document.getElementById('requestCorridorBtn').onclick = requestGreenCorridor;
+  document.getElementById('pickedUpBtn').onclick = pickedUpContinueToHospital;
+  document.getElementById('sosBtn').onclick = triggerSOS;
+
+  renderIncidentAlerts();
+  refreshTripUIForDriver();
+  restoreDriverTripVisuals();
+}
+
+/* Redraws an already-in-progress trip's route/markers/signals on the map from the
+   saved TRIP object — used after a page refresh (or a fresh login on another
+   device) so an ongoing trip doesn't just disappear. */
+function restoreDriverTripVisuals(){
+  if(!TRIP || !CURRENT_USER || TRIP.vehicleId!==CURRENT_USER.vehicleId) return;
+  if(!TRIP.routeCoords || !TRIP.routeCoords.length) return;
+  if(routeLine) return; // already drawn in this session
+  routeCoords = TRIP.routeCoords; signals = TRIP.signals || [];
+  const originData = {lat:routeCoords[0].lat, lng:routeCoords[0].lng, name:TRIP.originName};
+  const destData = TRIP.destHospital;
+  const isFireBrigade = TRIP.vehicleType === 'FIRE_BRIGADE';
+  originMarker = L.marker([originData.lat,originData.lng],{icon:makeDivIcon('loc-incident','📍',26)}).addTo(map).bindPopup(`<b>Pickup:</b> ${originData.name}`);
+  destMarker = L.marker([destData.lat,destData.lng],{icon:makeDivIcon(isFireBrigade?'loc-incident':'loc-hospital', isFireBrigade?'🔥':'🏥',26)}).addTo(map).bindPopup(`<b>Destination:</b> ${destData.name}`);
+  routeLine = L.polyline(routeCoords.map(c=>[c.lat,c.lng]),{color:'#5B8CFF',weight:5,opacity:0.85}).addTo(map);
+  const glow = L.polyline(routeCoords.map(c=>[c.lat,c.lng]),{color:'#5B8CFF',weight:12,opacity:0.15}).addTo(map);
+  routeLine._glow = glow;
+  map.fitBounds(routeLine.getBounds(),{padding:[40,40]});
+  placeSignalMarkers();
+  renderMetrics(); renderSignalList(); renderIotList(); renderRail();
+  if(TRIP.liveGPS){
+    ambMarker = L.marker([TRIP.liveGPS.lat,TRIP.liveGPS.lng],{icon:L.divIcon({className:'',html:'<div class="amb-icon">🚑</div>',iconSize:[22,22],iconAnchor:[11,11]})}).addTo(map);
+  }
+  drvLog('Ongoing trip restored.','l-blue');
+}
+
+/* List public accident/fire/rescue reports matched to THIS driver's vehicle (nearest-unit routing) */
+function renderIncidentAlerts(){
+  const box = document.getElementById('incidentAlertList');
+  const countChip = document.getElementById('incidentAlertCount');
+  if(!box || !CURRENT_USER) return;
+  const mine = PUBLIC_INCIDENTS.filter(inc =>
+    inc.assignedUsername === CURRENT_USER.username && (inc.status==='NEW' || inc.status==='ASSIGNED')
+  );
+  if(!mine.length){ box.innerHTML = '<div class="empty">No public accident/fire reports assigned to your vehicle right now.</div>'; countChip.style.display='none'; return; }
+  countChip.style.display='inline-block'; countChip.textContent = mine.length;
+  box.innerHTML = mine.map(inc => `
+    <div class="signal-item" style="align-items:flex-start;">
+      <div class="signal-dot" style="background:var(--red);box-shadow:0 0 6px var(--red);margin-top:4px;"></div>
+      <div class="signal-info">
+        <div class="signal-name">${INCIDENT_ICON[inc.type]||'🆘'} ${inc.typeLabel} — ${inc.locationName}</div>
+        <div class="signal-sub">${inc.description ? inc.description.slice(0,70) : 'No further description provided'} · ${inc.time}</div>
+        ${inc.status==='ASSIGNED' ? '<span class="badge amber" style="margin-top:4px;">DISPATCHED</span>' : `<button class="btn primary sm" style="margin-top:6px;" onclick="acceptIncident('${inc.id}')">🚑 ACCEPT & DISPATCH</button>`}
+      </div>
+    </div>`).join('');
+}
+
+function drvLog(msg,cls){
+  const box = document.getElementById('drvLogBox');
+  const line = document.createElement('div');
+  line.innerHTML = `<span class="l-time">[${nowStr()}]</span> <span class="${cls||''}">${msg}</span>`;
+  box.appendChild(line); box.scrollTop = box.scrollHeight;
+}
+
+function haversine(a,b){
+  const R=6371000, toRad=d=>d*Math.PI/180;
+  const dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng);
+  const s=Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2;
+  return 2*R*Math.asin(Math.sqrt(s));
+}
+async function fetchRoute(a,b){
+  const url = `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson&steps=false`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('routing error');
+  const data = await res.json();
+  if(!data.routes||!data.routes.length) throw new Error('no route');
+  const r = data.routes[0];
+  return {coords:r.geometry.coordinates.map(c=>({lat:c[1],lng:c[0]})), distance:r.distance};
+}
+const NORMAL_SPEED_MPS=5.0, CORRIDOR_SPEED_MPS=9.7, MAX_SIGNALS=7, SIGNAL_SPACING_M=550;
+function nearestJunction(coord, usedCodes){
+  let best=null, bestDist=Infinity;
+  KOLHAPUR_JUNCTIONS.forEach(j=>{
+    if(usedCodes.has(j.code)) return;
+    const d = haversine(coord, j);
+    if(d<bestDist){ bestDist=d; best=j; }
+  });
+  return best;
+}
+function buildSignals(coords,totalDist){
+  const out=[]; let acc=0,lastMark=0,genericCount=0; const usedCodes=new Set();
+  for(let i=1;i<coords.length;i++){
+    acc += haversine(coords[i-1],coords[i]);
+    if(acc-lastMark>=SIGNAL_SPACING_M && out.length<MAX_SIGNALS && acc<totalDist-150){
+      lastMark=acc; genericCount++;
+      const j = nearestJunction(coords[i], usedCodes);
+      if(j){ usedCodes.add(j.code); out.push({distM:acc, coord:coords[i], name:j.name, code:j.code}); }
+      else { out.push({distM:acc, coord:coords[i], name:`Signal Junction ${genericCount}`, code:`KOP-SIG-${String(genericCount).padStart(3,'0')}`}); }
+    }
+  }
+  out.forEach(s=>{ s.etaCorridor = s.distM/CORRIDOR_SPEED_MPS; s.etaNormal = s.distM/NORMAL_SPEED_MPS; s.state='idle'; });
+  return out;
+}
+
+function makeDivIcon(cls,emoji,size){
+  return L.divIcon({className:'', html:`<div class="loc-icon ${cls}" style="width:${size}px;height:${size}px;"><span>${emoji}</span></div>`, iconSize:[size,size], iconAnchor:[size/2,size]});
+}
+
+async function startEmergencyTrip(explicitOrigin, explicitDest, opts){
+  opts = opts || {};
+  if(TRIP && TRIP.status==='EN_ROUTE' && !opts.forceRestart){ drvLog('Trip already in progress.','l-amber'); return; }
+  const originSel = document.getElementById('origin'), destSel = document.getElementById('destination');
+  const isFireBrigade = CURRENT_USER.vehicleType === 'FIRE_BRIGADE';
+  const originData = explicitOrigin || ORIGIN_POINTS.find(l=>l.id===originSel.value) || LANDMARKS.find(l=>l.id===originSel.value);
+  const destData = explicitDest || (isFireBrigade ? FIRE_INCIDENT_SITES.find(s=>s.id===destSel.value) : HOSPITALS.find(h=>h.id===destSel.value));
+  const btn = document.getElementById('dispatchBtn');
+  btn.disabled = true; btn.textContent = '⏳ Computing route…';
+
+  clearMapLayers();
+  const destEmoji = opts.leg==='TO_INCIDENT' ? '🚨' : isFireBrigade ? '🔥' : '🏥';
+  const destCls = opts.leg==='TO_INCIDENT' ? 'loc-incident' : isFireBrigade ? 'loc-incident' : 'loc-hospital';
+  originMarker = L.marker([originData.lat,originData.lng],{icon:makeDivIcon('loc-incident','📍',26)}).addTo(map).bindPopup(`<b>Pickup:</b> ${originData.name}`);
+  destMarker = L.marker([destData.lat,destData.lng],{icon:makeDivIcon(destCls,destEmoji,26)}).addTo(map).bindPopup(`<b>Destination:</b> ${destData.name}`);
+
+  drvLog(`Emergency trip started: <b>${originData.name}</b> → <b>${destData.name}</b>`,'l-amber');
+
+  let routeResult;
+  try{
+    routeResult = await fetchRoute(originData,destData);
+    drvLog('Live road route received from routing engine.','l-green');
+  }catch(e){
+    drvLog('Routing service unavailable — using straight-line path.','l-red');
+    routeResult = {coords:[{lat:originData.lat,lng:originData.lng},{lat:destData.lat,lng:destData.lng}], distance:haversine(originData,destData)};
+  }
+  routeCoords = routeResult.coords;
+  const totalDist = routeResult.distance;
+  routeLine = L.polyline(routeCoords.map(c=>[c.lat,c.lng]),{color:'#5B8CFF',weight:5,opacity:0.85}).addTo(map);
+  const glow = L.polyline(routeCoords.map(c=>[c.lat,c.lng]),{color:'#5B8CFF',weight:12,opacity:0.15}).addTo(map);
+  routeLine._glow = glow;
+  map.fitBounds(routeLine.getBounds(),{padding:[40,40]});
+  signals = buildSignals(routeCoords,totalDist);
+  placeSignalMarkers();
+
+  const etaNormal = totalDist/NORMAL_SPEED_MPS, etaCorridor = totalDist/CORRIDOR_SPEED_MPS;
+
+  TRIP = {
+    emergencyCode: opts.emergencyCode || ('EMG-2026-' + String(Math.floor(1000+Math.random()*8999))),
+    vehicleId: CURRENT_USER.vehicleId, vehicleType: CURRENT_USER.vehicleType,
+    driverName: CURRENT_USER.fullName, medicalStaffName: null,
+    originName: originData.name, destHospital: destData,
+    status: 'EN_ROUTE', corridorStatus: 'NONE',
+    leg: opts.leg || 'DIRECT', incident: opts.incident || null,
+    patientCase: opts.patientCase || {criticality:'STABLE', category:'OTHER', oxygen:false, notes:'', incomingSent:false, hospitalReady:false, hospAccepted:false, hospPreparing:false},
+    distance: totalDist, etaNormalSec: etaNormal, etaCorridorSec: etaCorridor,
+    signals, routeCoords, progressFrac: 0, currentSpeedKmh: 0, sosActive:false,
+    liveGPS: {lat:originData.lat, lng:originData.lng, speedKmh:0, ts:Date.now()},
+  };
+  audit(opts.leg==='TO_INCIDENT' ? 'DISPATCHED_TO_INCIDENT' : 'TRIP_STARTED', `${TRIP.emergencyCode} ${originData.name} → ${destData.name}`);
+  drvLog(`Route locked: ${(totalDist/1000).toFixed(2)} km, ${signals.length} signal junction(s) identified.`,'l-green');
+  drvLog(opts.leg==='TO_INCIDENT' ? 'Notified traffic control of pickup response.' : 'Notified destination hospital and traffic control.','l-green');
+
+  renderMetrics(); renderSignalList(); renderIotList(); renderRail();
+  refreshTripUIForDriver();
+
+  btn.textContent = '🚑 Trip En Route';
+
+  if(opts.autoRequestCorridor){ requestGreenCorridor(); }
+  renderIncidentAlerts();
+}
+
+/* Driver accepts a public incident report → pickup leg starts immediately with
+   Green Corridor auto-requested (per policy, corridor coverage now includes pickup, not just hospital drop). */
+function acceptIncident(incidentId){
+  const inc = PUBLIC_INCIDENTS.find(x=>x.id===incidentId);
+  if(!inc) return;
+  if(TRIP && TRIP.status==='EN_ROUTE'){ alert('Finish or cancel your current trip before accepting a new incident.'); return; }
+  inc.status = 'ASSIGNED'; inc.assignedUsername = CURRENT_USER.username;
+  audit('INCIDENT_ASSIGNED', `${inc.id} → ${CURRENT_USER.username}`);
+  const origin = {name: CURRENT_USER.baseName ? `${CURRENT_USER.baseName} (Vehicle Base)` : 'Vehicle Base', lat: CURRENT_USER.baseLat, lng: CURRENT_USER.baseLng};
+  const dest = {name: `Incident Site — ${inc.locationName}`, lat: inc.lat, lng: inc.lng};
+  startEmergencyTrip(origin, dest, {
+    leg:'TO_INCIDENT', incident: inc, autoRequestCorridor:true,
+    emergencyCode: 'EMG-2026-' + String(Math.floor(1000+Math.random()*8999)),
+    patientCase: {criticality: inc.type==='FIRE'?'SERIOUS':'CRITICAL', category: inc.type, oxygen:false, notes: inc.description||'', incomingSent:false, hospitalReady:false, hospAccepted:false, hospPreparing:false},
+  });
+}
+
+/* Driver has reached the incident / picked up the patient → auto-continue to nearest hospital, corridor requested again for this leg. */
+function pickedUpContinueToHospital(){
+  if(!TRIP || TRIP.leg!=='TO_INCIDENT'){ return; }
+  const incidentPoint = {lat:TRIP.destHospital.lat, lng:TRIP.destHospital.lng, name:TRIP.destHospital.name};
+  let nearestHosp=null, bestD=Infinity;
+  HOSPITALS.forEach(h=>{ const d=haversine(incidentPoint,h); if(d<bestD){ bestD=d; nearestHosp=h; } });
+  drvLog('Patient picked up at incident site — continuing to nearest hospital.','l-green');
+  audit('PATIENT_PICKED_UP', TRIP.emergencyCode);
+  startEmergencyTrip(incidentPoint, nearestHosp, {
+    leg:'TO_HOSPITAL', incident: TRIP.incident, autoRequestCorridor:true, forceRestart:true,
+    emergencyCode: TRIP.emergencyCode, patientCase: TRIP.patientCase,
+  });
+}
+
+function setGpsBanner(msg, kind){
+  const b = document.getElementById('liveGpsBanner');
+  if(!b) return;
+  if(!msg){ b.style.display='none'; return; }
+  const colors = {ok:['#123A32','#2FD9A7'], warn:['#4A3618','#F5A524'], err:['#4A2029','#EF4B54']};
+  const [bg,fg] = colors[kind]||colors.warn;
+  b.style.display='block'; b.style.background=bg; b.style.color=fg; b.style.border=`1px solid ${fg}44`;
+  b.textContent = msg;
+}
+
+function toggleShareLocation(){
+  const btn = document.getElementById('shareLocBtn');
+  if(!navigator.geolocation){
+    setGpsBanner('⚠ This browser/device does not support GPS location.','err');
+    return;
+  }
+  if(liveOn){
+    // turning OFF
+    liveOn = false;
+    document.getElementById('drvGps').textContent = 'OFF';
+    btn.textContent = '📡 SHARE LIVE LOCATION';
+    if(liveWatchId!==null){ navigator.geolocation.clearWatch(liveWatchId); liveWatchId=null; }
+    if(liveDriverMarker){ map.removeLayer(liveDriverMarker); liveDriverMarker=null; }
+    drvLog('Live GPS sharing stopped.','l-amber');
+    setGpsBanner('','');
+    return;
+  }
+  // turning ON — wait for an actual GPS fix before claiming success
+  btn.textContent = '⏳ FETCHING GPS…';
+  setGpsBanner('Fetching your live GPS position — allow the location permission if your browser asks for it…','warn');
+  liveWatchId = navigator.geolocation.watchPosition(pos=>{
+    liveOn = true;
+    document.getElementById('drvGps').textContent = 'ON';
+    btn.textContent = '📡 SHARING…';
+    const ll = {lat:pos.coords.latitude, lng:pos.coords.longitude};
+    if(!liveDriverMarker){
+      liveDriverMarker = L.marker([ll.lat,ll.lng],{icon:L.divIcon({className:'',html:'<div class="drv-icon"><div class="core"></div></div>',iconSize:[20,20],iconAnchor:[10,10]})}).addTo(map);
+    } else { liveDriverMarker.setLatLng([ll.lat,ll.lng]); }
+    map.panTo([ll.lat,ll.lng]);
+    setGpsBanner(`📍 Live location active (accuracy ±${Math.round(pos.coords.accuracy)}m).`,'ok');
+    if(TRIP && TRIP.vehicleId===CURRENT_USER.vehicleId){
+      TRIP.liveGPS = {lat:ll.lat, lng:ll.lng, speedKmh: pos.coords.speed ? Math.round(pos.coords.speed*3.6) : TRIP.currentSpeedKmh, ts: Date.now()};
+    }
+  }, err=>{
+    liveOn = false;
+    document.getElementById('drvGps').textContent = 'OFF';
+    btn.textContent = '📡 SHARE LIVE LOCATION';
+    if(liveWatchId!==null){ navigator.geolocation.clearWatch(liveWatchId); liveWatchId=null; }
+    const reason = err && err.code===1 ? 'Location permission was denied — allow it in your browser\'s site settings and try again.'
+      : err && err.code===2 ? 'Position unavailable — check that GPS/location is turned on for this device.'
+      : err && err.code===3 ? 'GPS fix timed out — move to an open area and try again.'
+      : 'GPS fix unavailable — check device location permissions.';
+    drvLog(reason,'l-red');
+    setGpsBanner('⚠ '+reason,'err');
+  }, {enableHighAccuracy:true, timeout:15000, maximumAge:5000});
+}
+
+function requestGreenCorridor(){
+  if(!TRIP){ return; }
+  TRIP.corridorStatus = 'REQUESTED';
+  audit('CORRIDOR_REQUESTED', TRIP.emergencyCode);
+  drvLog('Green Corridor requested — awaiting Traffic Police / RTO approval. Drivers cannot control signals directly.','l-amber');
+  document.getElementById('railStatus').textContent = 'CORRIDOR REQUESTED';
+  document.getElementById('railStatus').style.color = 'var(--amber)';
+  refreshTripUIForDriver();
+}
+
+function stopEmergencyTrip(){
+  if(!TRIP) return;
+  if(animTimer) cancelAnimationFrame(animTimer);
+  TRIP.status = 'ARRIVED';
+  audit('TRIP_STOPPED', TRIP.emergencyCode);
+  drvLog('Emergency trip stopped by driver.','l-amber');
+  refreshTripUIForDriver();
+}
+
+function cancelEmergency(){
+  if(!TRIP) return;
+  audit('TRIP_CANCELLED', TRIP.emergencyCode);
+  drvLog('Emergency cancelled. Corridor released, resources freed.','l-red');
+  if(TRIP.leg==='TO_INCIDENT' && TRIP.incident){
+    TRIP.incident.status='NEW'; TRIP.incident.assignedUsername=null;
+    audit('INCIDENT_REOPENED', TRIP.incident.id);
+  }
+  if(animTimer) cancelAnimationFrame(animTimer);
+  TRIP = null;
+  clearMapLayers();
+  document.getElementById('metricsBox').innerHTML = '<div class="empty">Select pickup + hospital, then start emergency trip.</div>';
+  document.getElementById('signalList').innerHTML = '<div class="empty">Signal coordination plan appears after route is computed.</div>';
+  document.getElementById('iotList').innerHTML = '<div class="empty">Connected controllers report ON/OFF state during a dispatch.</div>';
+  document.getElementById('railTrack').innerHTML = '<div class="rail-empty">Corridor timeline activates once a trip starts.</div>';
+  document.getElementById('railStatus').textContent='STANDBY'; document.getElementById('railStatus').style.color='var(--muted-2)';
+  document.getElementById('dispatchBtn').textContent = '🚨 START EMERGENCY TRIP'; document.getElementById('dispatchBtn').disabled=false;
+  refreshTripUIForDriver();
+  renderIncidentAlerts();
+}
+
+function triggerSOS(){
+  if(TRIP) TRIP.sosActive = true;
+  audit('SOS_TRIGGERED', TRIP ? TRIP.emergencyCode : CURRENT_USER.vehicleId);
+  drvLog('🆘 EMERGENCY SOS TRIGGERED — highest priority alert sent to Traffic Control and Hospital.','l-red');
+}
+
+function clearMapLayers(){
+  if(animTimer) cancelAnimationFrame(animTimer);
+  [originMarker,destMarker,ambMarker].forEach(m=>{ if(m) map.removeLayer(m); });
+  if(routeLine){ if(routeLine._glow) map.removeLayer(routeLine._glow); map.removeLayer(routeLine); }
+  signalMarkers.forEach(m=>map.removeLayer(m)); signalMarkers=[];
+  originMarker=destMarker=ambMarker=routeLine=null; routeCoords=[]; signals=[];
+}
+
+function placeSignalMarkers(){
+  signals.forEach((s,i)=>{
+    const m = L.marker([s.coord.lat,s.coord.lng],{icon:L.divIcon({className:'',html:`<div class="sig-marker" id="sig-map-${i}"></div>`,iconSize:[14,14],iconAnchor:[7,7]})}).addTo(map).bindPopup(`<b>${s.name}</b> (${s.code})`);
+    signalMarkers.push(m);
+  });
+}
+
+function renderMetrics(){
+  const box = document.getElementById('metricsBox');
+  if(!TRIP){ box.innerHTML='<div class="empty">Select pickup + hospital, then start emergency trip.</div>'; return; }
+  box.innerHTML = `<div class="metric-grid">
+    <div class="metric"><div class="val">${(TRIP.distance/1000).toFixed(2)} km</div><div class="lbl">DISTANCE</div></div>
+    <div class="metric"><div class="val">${fmtTime(TRIP.etaCorridorSec)}</div><div class="lbl">CORRIDOR ETA</div></div>
+    <div class="metric"><div class="val">${fmtTime(TRIP.etaNormalSec)}</div><div class="lbl">NORMAL ETA</div></div>
+    <div class="metric save"><div class="val">${fmtTime(TRIP.etaNormalSec-TRIP.etaCorridorSec)}</div><div class="lbl">TIME SAVED</div></div>
+  </div>`;
+}
+function renderSignalList(){
+  const box = document.getElementById('signalList');
+  if(!signals.length){ box.innerHTML='<div class="empty">No signal junctions on this route.</div>'; return; }
+  box.innerHTML = signals.map((s,i)=>`<div class="signal-item" id="sig-row-${i}">
+    <div class="signal-dot" id="sig-dot-${i}"></div>
+    <div class="signal-info"><div class="signal-name">${s.name}</div><div class="signal-sub">${(s.distM/1000).toFixed(2)} km · ${s.code}</div></div>
+    <div class="signal-eta">${fmtTime(s.etaCorridor)}</div>
+  </div>`).join('');
+}
+function renderIotList(){
+  const box = document.getElementById('iotList');
+  if(!signals.length){ box.innerHTML='<div class="empty">No connected controllers on this route.</div>'; return; }
+  box.innerHTML = signals.map((s,i)=>`<div class="iot-item"><div><div>${s.name}</div><span class="iot-id">CTRL-ID: ${s.code}</span></div><div class="iot-chip" id="iot-chip-${i}">OFF</div></div>`).join('');
+}
+function renderRail(){
+  const track = document.getElementById('railTrack');
+  if(!signals.length){ track.innerHTML='<div class="rail-empty">No intermediate signals on this route.</div>'; return; }
+  const lastFrac = 96;
+  track.innerHTML = `<div class="rail-line"></div><div class="rail-line-fill" id="railFill"></div>
+    ${signals.map((s,i)=>{ const pct=6+(s.distM/(signals[signals.length-1].distM||1))*(lastFrac-6);
+      return `<div class="rail-node" id="rail-node-${i}" style="left:${pct}%;"><div class="dot"></div><div class="rn-label">${s.name}</div></div>`; }).join('')}
+    <div class="rail-veh" id="railVeh" style="left:6%;">🚑</div>`;
+}
+
+function refreshTripUIForDriver(){
+  const reqBtn = document.getElementById('requestCorridorBtn'), stopBtn = document.getElementById('stopTripBtn'), cancelBtn = document.getElementById('cancelTripBtn');
+  const active = !!(TRIP && TRIP.status==='EN_ROUTE');
+  reqBtn.disabled = !active || TRIP.corridorStatus!=='NONE';
+  stopBtn.disabled = !active; cancelBtn.disabled = !active;
+  const pickedUpBtn = document.getElementById('pickedUpBtn');
+  if(pickedUpBtn) pickedUpBtn.style.display = (active && TRIP.leg==='TO_INCIDENT') ? 'block' : 'none';
+}
+
+/* Runs once Traffic Police approves the corridor — animates vehicle + signal ON/OFF */
+function runCorridorSimulation(){
+  if(!TRIP || !routeCoords.length) return;
+  document.getElementById('railStatus').textContent='CORRIDOR ACTIVE'; document.getElementById('railStatus').style.color='var(--green)';
+  drvLog('Corridor approved by Traffic Control — vehicle en route with cleared signals.','l-green');
+  if(ambMarker) map.removeLayer(ambMarker);
+  ambMarker = L.marker([routeCoords[0].lat,routeCoords[0].lng],{icon:L.divIcon({className:'',html:'<div class="amb-icon">🚑</div>',iconSize:[22,22],iconAnchor:[11,11]})}).addTo(map);
+  const totalPoints = routeCoords.length, durationMs=14000, startTime=performance.now();
+  const signalTriggered=new Array(signals.length).fill(false), iotOn=new Array(signals.length).fill(false), iotOffLogged=new Array(signals.length).fill(false);
+  const PASS_MARGIN_M=200;
+  const fullDist = routeCoords.reduce((acc,c,i)=> i===0?0:acc+haversine(routeCoords[i-1],c),0);
+
+  function step(t){
+    const elapsed=t-startTime; let frac=Math.min(1,elapsed/durationMs);
+    const idx=Math.min(totalPoints-1, Math.floor(frac*(totalPoints-1)));
+    const pt = routeCoords[idx]; ambMarker.setLatLng([pt.lat,pt.lng]);
+    TRIP.progressFrac = frac; TRIP.currentSpeedKmh = Math.round(CORRIDOR_SPEED_MPS*3.6);
+    TRIP.liveGPS = {lat:pt.lat, lng:pt.lng, speedKmh:TRIP.currentSpeedKmh, ts:Date.now()};
+    saveSharedState();
+
+    const railFill=document.getElementById('railFill'); if(railFill) railFill.style.width=(frac*94+6)+'%';
+    const railVeh=document.getElementById('railVeh'); if(railVeh) railVeh.style.left=(frac*90+6)+'%';
+    const distCovered = frac*fullDist;
+
+    signals.forEach((s,i)=>{
+      const dot=document.getElementById(`sig-dot-${i}`), mapDot=document.getElementById(`sig-map-${i}`), railNode=document.getElementById(`rail-node-${i}`);
+      const remaining = s.distM-distCovered; let state='idle';
+      if(remaining<0) state='green'; else if(remaining<300) state='amber';
+      if(dot) dot.className='signal-dot '+(state==='idle'?'':state);
+      if(mapDot){ mapDot.style.background = state==='green'?'var(--green)':state==='amber'?'var(--amber)':'var(--muted-2)'; mapDot.style.boxShadow = state!=='idle' ? '0 0 8px currentColor':'none'; }
+      if(railNode) railNode.className='rail-node '+(state==='idle'?'':state);
+      if(state==='green' && !signalTriggered[i]){
+        signalTriggered[i]=true; iotOn[i]=true;
+        const chip=document.getElementById(`iot-chip-${i}`); if(chip){ chip.textContent='ON'; chip.classList.add('on'); }
+        drvLog(`IoT → ${s.code}: SET GREEN <b>(ON)</b> for ${s.name}.`,'l-green');
+      }
+      if(iotOn[i] && !iotOffLogged[i] && (distCovered-s.distM)>PASS_MARGIN_M){
+        iotOffLogged[i]=true; iotOn[i]=false;
+        const chip=document.getElementById(`iot-chip-${i}`); if(chip){ chip.textContent='OFF'; chip.classList.remove('on'); }
+        if(dot) dot.className='signal-dot'; if(mapDot){ mapDot.style.background='var(--muted-2)'; mapDot.style.boxShadow='none'; } if(railNode) railNode.className='rail-node';
+        drvLog(`IoT → ${s.code}: RESTORED NORMAL CYCLE <b>(OFF)</b>.`,'l-amber');
+      }
+    });
+
+    if(frac<1){ animTimer=requestAnimationFrame(step); }
+    else{
+      document.getElementById('railStatus').textContent='ARRIVED'; document.getElementById('railStatus').style.color='var(--blue)';
+      drvLog('Vehicle has arrived at destination hospital. Corridor released.','l-green');
+      TRIP.status='ARRIVED'; TRIP.corridorStatus='CLOSED';
+      audit('TRIP_ARRIVED', TRIP.emergencyCode);
+      refreshTripUIForDriver();
+    }
+  }
+  animTimer = requestAnimationFrame(step);
+}
+
+/* ================================================================
+   MEDICAL STAFF DASHBOARD
+   ================================================================ */
+function renderMedicalDash(){
+  const has = TRIP && TRIP.vehicleId === CURRENT_USER.vehicleId;
+  document.getElementById('medCaseId').textContent = has ? TRIP.emergencyCode.replace('EMG','CASE') : '—';
+  document.getElementById('medVehId').textContent = has ? TRIP.vehicleId : (CURRENT_USER.vehicleId||'—');
+  document.getElementById('medDriver').textContent = has ? TRIP.driverName : '—';
+  document.getElementById('medDest').textContent = has ? TRIP.destHospital.name : '—';
+  document.getElementById('medDist').textContent = has ? ((TRIP.distance*(1-TRIP.progressFrac))/1000).toFixed(2)+' km' : '—';
+  document.getElementById('medEta').textContent = has ? fmtTime(TRIP.etaCorridorSec*(1-TRIP.progressFrac)) : '—';
+  const cb = document.getElementById('medCorridorBadge');
+  cb.textContent = has ? TRIP.corridorStatus : 'NO ACTIVE TRIP';
+  cb.className = 'badge ' + (has && TRIP.corridorStatus==='ACTIVE' ? 'green' : has && TRIP.corridorStatus==='REQUESTED' ? 'amber' : 'grey');
+  const hb = document.getElementById('medHospBadge');
+  hb.textContent = has && TRIP.patientCase.hospitalReady ? 'READY TO RECEIVE' : has ? 'AWAITING PREP' : '—';
+  hb.className = 'badge ' + (has && TRIP.patientCase.hospitalReady ? 'green':'grey');
+
+  if(has){
+    document.getElementById('medCriticality').value = TRIP.patientCase.criticality;
+    document.getElementById('medCategory').value = TRIP.patientCase.category;
+    document.getElementById('medOxygen').checked = TRIP.patientCase.oxygen;
+    document.getElementById('medNotes').value = TRIP.patientCase.notes;
+  }
+
+  const updateBtn = document.getElementById('medUpdateBtn');
+  const incomingBtn = document.getElementById('medIncomingBtn');
+  updateBtn.disabled = !has; incomingBtn.disabled = !has;
+  updateBtn.title = has ? '' : 'No active trip yet — this enables once a vehicle starts an emergency trip.';
+  incomingBtn.title = updateBtn.title;
+
+  updateBtn.onclick = ()=>{
+    if(!TRIP || TRIP.vehicleId !== CURRENT_USER.vehicleId) return; // buttons are disabled in this state, but guard anyway
+    TRIP.patientCase.criticality = document.getElementById('medCriticality').value;
+    TRIP.patientCase.category = document.getElementById('medCategory').value;
+    TRIP.patientCase.oxygen = document.getElementById('medOxygen').checked;
+    TRIP.patientCase.notes = document.getElementById('medNotes').value;
+    TRIP.medicalStaffName = CURRENT_USER.fullName;
+    audit('PATIENT_CASE_UPDATED', TRIP.emergencyCode);
+    renderMedicalDash();
+  };
+  incomingBtn.onclick = ()=>{
+    if(!TRIP) return;
+    TRIP.patientCase.incomingSent = true;
+    audit('PATIENT_INCOMING_SENT', TRIP.emergencyCode + ' → ' + TRIP.destHospital.name);
+    renderMedicalDash();
+  };
+}
+
+/* ================================================================
+   TRAFFIC POLICE / RTO DASHBOARD
+   ================================================================ */
+let mapTPInited=false, mapTP, tpVehMarker=null, tpSignalMarkers=[];
+function initTrafficDash(){
+  if(!mapTPInited){
+    mapTP = L.map('mapTP',{zoomControl:true}).setView([16.6980,74.2400],13);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors',maxZoom:16}).addTo(mapTP);
+    HOSPITALS.forEach(h=> L.marker([h.lat,h.lng],{icon:makeDivIcon('loc-hospital','🏥',22)}).addTo(mapTP).bindPopup(`<b>${h.name}</b>`) );
+    mapTPInited = true;
+  } else { setTimeout(()=>mapTP.invalidateSize(),50); }
+
+  document.getElementById('tpApproveBtn').onclick = ()=>{
+    if(!TRIP) return;
+    TRIP.corridorStatus='APPROVED'; audit('CORRIDOR_APPROVED', TRIP.emergencyCode);
+    tpLog('Green Corridor <b>APPROVED</b> for '+TRIP.emergencyCode+'.','l-green');
+    TRIP.corridorStatus='ACTIVE';
+    runCorridorSimulation();
+    renderTrafficDash();
+  };
+  document.getElementById('tpRejectBtn').onclick = ()=>{
+    if(!TRIP) return;
+    TRIP.corridorStatus='REJECTED'; audit('CORRIDOR_REJECTED', TRIP.emergencyCode);
+    tpLog('Green Corridor <b>REJECTED</b> for '+TRIP.emergencyCode+'.','l-red');
+    renderTrafficDash();
+  };
+  document.getElementById('tpPauseBtn').onclick = ()=>{
+    if(!TRIP) return; TRIP.corridorStatus='PAUSED'; audit('CORRIDOR_PAUSED', TRIP.emergencyCode);
+    tpLog('Corridor <b>PAUSED</b> by traffic control.','l-amber'); if(animTimer) cancelAnimationFrame(animTimer); renderTrafficDash();
+  };
+  document.getElementById('tpEndBtn').onclick = ()=>{
+    if(!TRIP) return; TRIP.corridorStatus='CLOSED'; audit('CORRIDOR_ENDED', TRIP.emergencyCode);
+    tpLog('Corridor <b>CLOSED</b> — normal signal cycle restored.','l-amber'); if(animTimer) cancelAnimationFrame(animTimer); renderTrafficDash();
+  };
+  document.getElementById('tpOverrideBtn').onclick = ()=>{
+    if(!TRIP) return; audit('SYSTEM_OVERRIDE', TRIP.emergencyCode); tpLog('Manual <b>override</b> of system recommendation logged.','l-amber');
+  };
+  document.getElementById('tpAlertBtn').onclick = ()=>{
+    audit('ALERT_SENT', TRIP ? TRIP.emergencyCode : 'general'); tpLog('Alert broadcast to field officers.','l-blue');
+  };
+
+  renderTrafficDash();
+}
+function tpLog(msg,cls){
+  const box = document.getElementById('tpLogBox');
+  const line=document.createElement('div'); line.innerHTML=`<span class="l-time">[${nowStr()}]</span> <span class="${cls||''}">${msg}</span>`;
+  box.appendChild(line); box.scrollTop=box.scrollHeight;
+}
+function renderTrafficDash(){
+  tpSignalMarkers.forEach(m=>mapTP.removeLayer(m)); tpSignalMarkers=[];
+  if(tpVehMarker){ mapTP.removeLayer(tpVehMarker); tpVehMarker=null; }
+
+  const card = document.getElementById('tpVehicleCard');
+  const seq = document.getElementById('tpSignalSeq');
+  const approveBtn=document.getElementById('tpApproveBtn'), rejectBtn=document.getElementById('tpRejectBtn'),
+        pauseBtn=document.getElementById('tpPauseBtn'), endBtn=document.getElementById('tpEndBtn'), overrideBtn=document.getElementById('tpOverrideBtn');
+
+  if(!TRIP){
+    card.innerHTML = '<div class="empty">No active emergency vehicle right now.</div>';
+    seq.innerHTML = '<div class="empty">Appears once a route is dispatched.</div>';
+    [approveBtn,rejectBtn,pauseBtn,endBtn,overrideBtn].forEach(b=>b.disabled=true);
+    return;
+  }
+
+  card.innerHTML = `
+    <div class="kv"><span class="k">Vehicle ID</span><span class="v">${TRIP.vehicleId}</span></div>
+    <div class="kv"><span class="k">Type</span><span class="v">${TRIP.vehicleType}</span></div>
+    <div class="kv"><span class="k">Driver</span><span class="v">${TRIP.driverName}</span></div>
+    <div class="kv"><span class="k">Destination</span><span class="v">${TRIP.destHospital.name}</span></div>
+    <div class="kv"><span class="k">Distance</span><span class="v">${(TRIP.distance/1000).toFixed(2)} km</span></div>
+    <div class="kv"><span class="k">ETA (corridor)</span><span class="v">${fmtTime(TRIP.etaCorridorSec)}</span></div>
+    <div class="kv"><span class="k">Emergency Priority</span><span class="v">${TRIP.sosActive ? '<span class="badge red">SOS</span>' : '<span class="badge amber">HIGH</span>'}</span></div>
+    <div class="kv"><span class="k">Corridor Status</span><span class="v"><span class="badge ${TRIP.corridorStatus==='ACTIVE'?'green':TRIP.corridorStatus==='REQUESTED'?'amber':TRIP.corridorStatus==='REJECTED'?'red':'grey'}">${TRIP.corridorStatus}</span></span></div>
+    <div class="kv"><span class="k">Live GPS</span><span class="v">${TRIP.liveGPS ? TRIP.liveGPS.lat.toFixed(4)+', '+TRIP.liveGPS.lng.toFixed(4)+' · '+(TRIP.currentSpeedKmh||0)+' km/h' : '—'}</span></div>
+  `;
+
+  seq.innerHTML = TRIP.signals.map((s,i)=>{
+    const status = TRIP.corridorStatus==='ACTIVE' ? (i===0?'GREEN':'PREPARE') : 'PENDING';
+    return `<div class="kv"><span class="k">${s.code} — ${s.name}</span><span class="v"><span class="badge ${status==='GREEN'?'green':status==='PREPARE'?'amber':'grey'}">${status}</span></span></div>`;
+  }).join('') || '<div class="empty">No intermediate signals on this route.</div>';
+
+  L.marker([HOSPITALS[0].lat,HOSPITALS[0].lng]); // no-op keep hospitals rendered once (already added on init)
+  TRIP.signals.forEach(s=>{ const m=L.circleMarker([s.coord.lat,s.coord.lng],{radius:5,color:'#F5A524',fillOpacity:0.8}).addTo(mapTP).bindPopup(s.name); tpSignalMarkers.push(m); });
+  if(routeCoords.length){
+    const line = L.polyline(routeCoords.map(c=>[c.lat,c.lng]),{color:'#5B8CFF',weight:4,opacity:0.7}).addTo(mapTP);
+    tpSignalMarkers.push(line);
+    mapTP.fitBounds(line.getBounds(),{padding:[30,30]});
+  }
+  const liveLat = TRIP.liveGPS ? TRIP.liveGPS.lat : (routeCoords[0]?.lat||16.698);
+  const liveLng = TRIP.liveGPS ? TRIP.liveGPS.lng : (routeCoords[0]?.lng||74.24);
+  tpVehMarker = L.marker([liveLat, liveLng],{icon:makeDivIcon('loc-incident','🚑',24)}).addTo(mapTP).bindPopup(`<b>${TRIP.vehicleId}</b><br>Live position · ${(TRIP.currentSpeedKmh||0)} km/h`);
+
+  approveBtn.disabled = TRIP.corridorStatus!=='REQUESTED';
+  rejectBtn.disabled = TRIP.corridorStatus!=='REQUESTED';
+  pauseBtn.disabled = TRIP.corridorStatus!=='ACTIVE';
+  endBtn.disabled = !(TRIP.corridorStatus==='ACTIVE'||TRIP.corridorStatus==='PAUSED');
+  overrideBtn.disabled = false;
+}
+
+/* ================================================================
+   HOSPITAL DASHBOARD
+   ================================================================ */
+let mapHospInited=false, mapHosp, hospVehMarker=null, hospHospitalMarker=null;
+function initHospitalMap(hospital){
+  if(!mapHospInited){
+    mapHosp = L.map('mapHosp',{zoomControl:true}).setView([hospital?hospital.lat:16.6980, hospital?hospital.lng:74.2400],13);
+    L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}',{attribution:'Tiles &copy; Esri &mdash; Esri, HERE, Garmin, &copy; OpenStreetMap contributors',maxZoom:16}).addTo(mapHosp);
+    mapHospInited = true;
+  } else { setTimeout(()=>mapHosp.invalidateSize(),50); }
+  if(hospital && !hospHospitalMarker){
+    hospHospitalMarker = L.marker([hospital.lat,hospital.lng],{icon:makeDivIcon('loc-hospital','🏥',24)}).addTo(mapHosp).bindPopup(`<b>${hospital.name}</b> (this hospital)`);
+  }
+}
+function renderHospitalDash(){
+  const hospital = HOSPITALS.find(h=>h.id===CURRENT_USER.hospitalId);
+  document.getElementById('hHospName').textContent = hospital ? hospital.name : '—';
+  const has = TRIP && TRIP.destHospital.id === CURRENT_USER.hospitalId && TRIP.status!=='CANCELLED';
+
+  document.getElementById('hCardAmb').textContent = has && TRIP.vehicleType==='AMBULANCE' ? 1 : 0;
+  document.getElementById('hCardCritical').textContent = has && TRIP.patientCase.criticality==='CRITICAL' ? 1 : 0;
+  document.getElementById('hCardEta5').textContent = has && TRIP.etaCorridorSec < 300 ? 1 : 0;
+  document.getElementById('hCardCorridor').textContent = has && TRIP.corridorStatus==='ACTIVE' ? 1 : 0;
+
+  initHospitalMap(hospital);
+  const liveBadge = document.getElementById('hLiveBadge');
+  if(has && TRIP.liveGPS){
+    liveBadge.textContent = `LIVE · ${TRIP.vehicleId} · ${TRIP.currentSpeedKmh||0} km/h`;
+    liveBadge.className = 'badge green';
+    if(!hospVehMarker){ hospVehMarker = L.marker([TRIP.liveGPS.lat,TRIP.liveGPS.lng],{icon:makeDivIcon('loc-incident','🚑',24)}).addTo(mapHosp); }
+    else { hospVehMarker.setLatLng([TRIP.liveGPS.lat,TRIP.liveGPS.lng]); }
+    hospVehMarker.bindPopup(`<b>${TRIP.vehicleId}</b><br>${TRIP.driverName} · ${TRIP.currentSpeedKmh||0} km/h`);
+  } else {
+    liveBadge.textContent = 'NO ACTIVE TRIP'; liveBadge.className = 'badge grey';
+    if(hospVehMarker){ mapHosp.removeLayer(hospVehMarker); hospVehMarker=null; }
+  }
+
+  const list = document.getElementById('hospitalList');
+  if(!has){ list.innerHTML = '<div class="empty">No incoming emergency vehicles.</div>'; return; }
+
+  list.innerHTML = `
+    <table>
+      <thead><tr><th>Vehicle</th><th>Driver</th><th>Patient</th><th>Location / Route</th><th>Distance</th><th>ETA</th><th>Speed</th><th>Corridor</th><th>Actions</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>${TRIP.vehicleId}</td>
+          <td>${TRIP.driverName}</td>
+          <td><span class="badge ${TRIP.patientCase.criticality==='CRITICAL'?'red':TRIP.patientCase.criticality==='SERIOUS'?'amber':'grey'}">${TRIP.patientCase.criticality}</span></td>
+          <td>${TRIP.originName} → ${TRIP.destHospital.name}</td>
+          <td>${((TRIP.distance*(1-TRIP.progressFrac))/1000).toFixed(2)} km</td>
+          <td>${fmtTime(TRIP.etaCorridorSec*(1-TRIP.progressFrac))}</td>
+          <td>${TRIP.currentSpeedKmh||0} km/h</td>
+          <td><span class="badge ${TRIP.corridorStatus==='ACTIVE'?'green':'grey'}">${TRIP.corridorStatus}</span></td>
+          <td>
+            <button class="btn ghost sm" onclick="hospAccept()" ${TRIP.patientCase.hospAccepted?'disabled':''}>${TRIP.patientCase.hospAccepted?'✓ Accepted':'Accept'}</button>
+            <button class="btn ghost sm" onclick="hospPrepare()" ${TRIP.patientCase.hospPreparing?'disabled':''}>${TRIP.patientCase.hospPreparing?'✓ ED Preparing':'Prepare ED'}</button>
+            <button class="btn green sm" onclick="hospReady()" ${TRIP.patientCase.hospitalReady?'disabled':''}>${TRIP.patientCase.hospitalReady?'✓ Ready':'Ready to Receive'}</button>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    ${TRIP.patientCase.hospAccepted ? '<div class="footer-note" style="padding:10px 0 0;">✅ Hospital has accepted this incoming case.</div>' : ''}
+    ${TRIP.patientCase.hospPreparing ? '<div class="footer-note" style="padding:2px 0 0;">🛏️ Emergency Department is being prepared.</div>' : ''}
+    ${TRIP.patientCase.hospitalReady ? '<div class="footer-note" style="padding:2px 0 0;">🟢 Hospital marked as Ready to Receive.</div>' : ''}
+    ${TRIP.patientCase.incomingSent ? '<div class="footer-note" style="padding:10px 0 0;">📨 "Patient Incoming" notification received from medical staff.</div>' : ''}
+    ${TRIP.patientCase.notes ? `<div class="card" style="margin-top:10px;"><h3>Clinical Notes from Medical Staff</h3><div style="font-size:12.5px;white-space:pre-wrap;">${TRIP.patientCase.notes}</div></div>` : ''}
+  `;
+}
+function hospAccept(){ if(!TRIP) return; TRIP.patientCase.hospAccepted = true; audit('HOSPITAL_ACCEPTED', TRIP.emergencyCode); renderHospitalDash(); }
+function hospPrepare(){ if(!TRIP) return; TRIP.patientCase.hospPreparing = true; audit('HOSPITAL_PREPARING_ED', TRIP.emergencyCode); renderHospitalDash(); }
+function hospReady(){ if(!TRIP) return; TRIP.patientCase.hospitalReady = true; audit('HOSPITAL_READY_TO_RECEIVE', TRIP.emergencyCode); renderHospitalDash(); renderMedicalDash(); }
+
+/* ================================================================
+   ADMIN DASHBOARD
+   ================================================================ */
+function renderAdminDash(){
+  document.getElementById('aStatTotal').textContent = TRIP ? 1 : 0;
+  document.getElementById('aStatSaved').textContent = TRIP ? fmtTime(TRIP.etaNormalSec-TRIP.etaCorridorSec) : '0:00';
+  document.getElementById('aStatSignals').textContent = TRIP ? TRIP.signals.length : 0;
+
+  document.querySelectorAll('.tabs .tab').forEach(t=>{
+    t.onclick = ()=>{
+      document.querySelectorAll('.tabs .tab').forEach(x=>x.classList.remove('active'));
+      t.classList.add('active');
+      ['users','vehicles','reports','audit'].forEach(k=>{ document.getElementById('admin-'+k).style.display = (k===t.dataset.atab)?'block':'none'; });
+    };
+  });
+
+  function renderUsers(){
+    const q = document.getElementById('adminSearch').value.trim().toLowerCase();
+    const rf = document.getElementById('adminRoleFilter').value;
+    const rows = Object.entries(DB_USERS).filter(([uname,u])=>{
+      if(rf && u.role!==rf) return false;
+      if(q && !(uname.toLowerCase().includes(q) || u.fullName.toLowerCase().includes(q))) return false;
+      return true;
+    }).map(([uname,u])=>`<tr><td>${uname}</td><td>${u.fullName}</td><td><span class="badge blue">${u.role.replace('_',' ')}</span></td><td>${u.vehicleId||u.hospitalId||'—'}</td><td><span class="badge green">ACTIVE</span></td></tr>`).join('');
+    document.getElementById('adminUserTbody').innerHTML = rows || '<tr><td colspan="5" class="empty">No matches.</td></tr>';
+  }
+  document.getElementById('adminSearch').oninput = renderUsers;
+  document.getElementById('adminRoleFilter').onchange = renderUsers;
+  renderUsers();
+
+  document.getElementById('adminVehicleTbody').innerHTML = VEHICLES.map(v=>`
+    <tr><td>${v.vehicleId}</td><td>${v.regNo}</td><td>${v.type}</td>
+      <td><span class="badge ${TRIP && TRIP.vehicleId===v.vehicleId ? 'amber':'grey'}">${TRIP && TRIP.vehicleId===v.vehicleId ? 'ON_TRIP':'IDLE'}</span></td>
+      <td><span class="badge green">${v.fitness}</span></td><td><span class="badge green">${v.insurance}</span></td>
+      <td><span class="badge ${v.authorized?'green':'red'}">${v.authorized?'YES':'NO'}</span></td>
+    </tr>`).join('');
+
+  const counts = {AMBULANCE:0, FIRE_BRIGADE:0, POLICE_VEHICLE:0, NDRF:0};
+  if(TRIP) counts[TRIP.vehicleType] = (counts[TRIP.vehicleType]||0)+1;
+  const max = Math.max(1,...Object.values(counts));
+  document.getElementById('reportBars').innerHTML = Object.entries(counts).map(([k,v])=>`
+    <div style="margin-bottom:10px;">
+      <div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--muted);margin-bottom:4px;"><span>${k.replace('_',' ')}</span><span>${v}</span></div>
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:5px;height:10px;overflow:hidden;">
+        <div style="width:${(v/max*100)}%;height:100%;background:linear-gradient(90deg,#5B8CFF,#2FD9A7);"></div>
+      </div>
+    </div>`).join('');
+
+  renderAuditLog();
+}
+
+/* Periodic refresh so open dashboards stay in sync with TRIP state during simulation,
+   AND (added) pulls the latest shared state so this device sees changes made on any
+   other device — this is what keeps everyone's view in sync. */
+let _gcLastAnimatedCode = null;
+setInterval(async ()=>{
+  await loadSharedState();
+  if(!CURRENT_USER) return;
+  if(CURRENT_USER.role==='MEDICAL_STAFF') renderMedicalDash();
+  if(CURRENT_USER.role==='HOSPITAL') renderHospitalDash();
+  if(CURRENT_USER.role==='TRAFFIC_POLICE' && document.getElementById('dash-TRAFFIC_POLICE').classList.contains('active')) renderTrafficDash();
+  if(CURRENT_USER.role==='DRIVER' && document.getElementById('dash-DRIVER').classList.contains('active')){
+    renderIncidentAlerts();
+    refreshTripUIForDriver();
+    restoreDriverTripVisuals();
+    // If the corridor was approved from another device (e.g. Traffic Police on a
+    // different phone/laptop), start the local animation on this driver's map too.
+    if(TRIP && TRIP.vehicleId===CURRENT_USER.vehicleId && TRIP.corridorStatus==='ACTIVE'
+       && !animTimer && routeCoords.length && _gcLastAnimatedCode!==TRIP.emergencyCode){
+      _gcLastAnimatedCode = TRIP.emergencyCode;
+      runCorridorSimulation();
+    }
+  }
+  if(CURRENT_USER.role==='ADMIN'){ document.getElementById('aStatTotal').textContent = TRIP?1:0; renderAuditLog(); }
+}, 2500);
+
+/* ================================================================
+   STARTUP — load any previously saved data and restore the user's
+   own session so a page refresh (or opening on another device)
+   doesn't lose anything.
+   ================================================================ */
+(async function gcInit(){
+  await loadSharedState();
+  renderAuditLog();
+  const savedUsername = await loadSession();
+  if(savedUsername && DB_USERS[savedUsername]){
+    CURRENT_USER = Object.assign({username:savedUsername}, DB_USERS[savedUsername]);
+    document.getElementById('loginWrap').style.display='none';
+    document.getElementById('app').classList.add('active');
+    openDashboardForRole(CURRENT_USER.role);
+  }
+})();
+</script>
+</body>
+</html>
